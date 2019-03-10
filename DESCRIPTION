@@ -1,0 +1,14 @@
+Package: capelinker
+Title: Machine Learning-based Record Linkage for Historical South African Individuals
+Version: 0.0.1
+Authors@R: person("First", "Last", email = "first.last@example.com", role = c("aut", "cre"))
+Description: Provides utility function and pretrained models to link 
+Depends: R (>= 3.4.1)
+License: What license is it under?
+Encoding: UTF-8
+Imports:
+    data.table (>= 1.10.0),
+    stringdist (>= 0.9.4.6),
+    randomForest (>= 4.6-12),
+    stringi (>= 1.2.2)
+LazyData: true
