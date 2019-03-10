@@ -29,7 +29,7 @@ predict_links = function(dat_candidates, id_from, id_to,
     # nasty
     # better to ask for the actual object, but then users must handle lists
     # for now
-    model = pretrained_models[[modstring]]
+    model = pretrained_models[[modstring]]$model
 
 
     dat_candidates$predicted = randomForest:::predict.randomForest(model, 
