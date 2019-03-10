@@ -15,7 +15,6 @@
 
 #' @examples
 #'
-#' @import randomForest
 #' @export
 predict_links = function(dat_candidates, id_from, id_to,
     minimum_confidence = 0.5, 
@@ -33,7 +32,7 @@ predict_links = function(dat_candidates, id_from, id_to,
     model = pretrained_models[[modstring]]
 
 
-    dat_candidates$predicted = predict(model, 
+    dat_candidates$predicted = randomForest:::predict.randomForest(model, 
                                     newdata = dat_candidates, 
                                     type = "prob")[, 2]
 
