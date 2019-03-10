@@ -15,6 +15,7 @@
 
 #' @examples
 #'
+#' @import randomForest
 #' @export
 predict_links = function(dat_candidates, id_from, id_to,
     minimum_confidence = 0.5, 
