@@ -1,19 +1,27 @@
 #' Predict links
 #' 
-#' @param dat_candidates. A dataset with link candidates, created using \code{make_candidates}, and with distances calculated using \code{distcalc}. \code{predict_links} expects this dataset to follow the naming conventions of the model you're using (detailed below).
+#' \code{predict links} takes a dataset of candidate links and distances, to predict links and select the best ones.
 #' 
-#' @param id_from
-#' @param id_to
-#' @param minimum_confidence
-#' @param modstring String giving the name of one of the pretrained models. See details below.
-
-#' @return 
 #' uses datatable to handle potentially large numer of candidates
 #' no need to assign to a new object
 #' if you do this, the original dataset is also modified
 #' maybe I should fix this?
-
-#' @examples
+#' 
+#' The following models can be used 
+#' \itemize{
+#'  \item \code{m_rf_baptisms_sparse} a model linking parents in baptism records to marriage records, based on minimal information: male surname (mlast), male first name (mfirst), female first name (wfirst, female surname not used because it would typically not be reported in the baptism records), and year of marriage/baptism (year).
+#'  \item \code{m_rf_baptisms_full} a model linking parents in baptism and marriage records, using additional information: initials, profession, and soundex distances of the names. Performance is not much better than the sparse model.
+#' }
+#' 
+#' @param dat_candidates. A dataset with link candidates, created using \code{make_candidates}, and with distances calculated using \code{distcalc}. \code{predict_links} expects this dataset to follow the naming conventions of the model you're using (detailed below).
+#' 
+#' @param id_from string giving the identifier variable in the candidates dataset for the observations from the \code{_from} dataset.
+#' @param id_to string giving the identifier variable in the candidates dataset for the observations from the \code{_to} dataset.
+#' @param minimum_confidence the minimum confidence level (vote share) to return a link. Defaults to 0.5.
+#' @param modstring String giving the name of one of the pretrained models, either m_rf_baptisms_sparse or m_rf_baptisms_full. See details below.
+#' 
+#' @return The candidates dataset filtered down to only the best links for each record in the original \code{_from} dataset.
+#' Also some details about one:one and many:one
 #'
 #' @export
 predict_links = function(dat_candidates, id_from, id_to,

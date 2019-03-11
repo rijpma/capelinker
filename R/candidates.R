@@ -1,25 +1,27 @@
-
-
-# docs
-# @param dat_from the dataset from which to match. To make 
-#' Create a dataset of candidate links from two datasets.
+#' Create candidate links from two datasets.
+#' 
+#' \code{candidates} merges two datasets based on a distance criterium. The resulting dataset can be used to predict links.
+#' 
+#' Blocking on multiple variables is currently not supported, but could be done by using \code{candidates()} repeatedly and merging the results might work.
+#' 
+#' Because historical records often provide limited information, it is possible to block on string distances. Note that this can become quite slow when there is a large number of records to in each dataset (say, tens of thousands). 
+#' 
+#' String distance blocking is done using Jaro-Winkler string distances, which de-emphasise differences at the end of the string. The distance ranging from 0 (perfect match) to 1 (completely mismatch). Set the maxdist (see Arguments) accordingly.
+#' 
+#' It is currently possible to return missing values when for a given record, no candidate is found. While these records can never be matched, they are left in to make comparisons of the dataset easier.
+#' 
 #' 
 #' @param dat_from a data.table
 #' @param dat_to a data.table
 #' @param idvariable_from String giving the identifier variable in dat_from.
 #' @param idvariable_to String giving the identifier variable in dat_from.
-#' @param blockvariable String giving the name of the blocking varariable. Should be present in both datasets. Defaults to "mlast", the male surname.
+#' @param blockvariable String giving the name of the blocking varariable. Distance between this variable in both datasets determines whether a pair of records is a candidate. Should be present in both datasets. Defaults to "mlast", the male surname.
 #' @param blocktype Type of blocking: string distance (default) or numeric.
-#' @param linktype Should there be no more than one record in each dataset that can be linked (one:one), or is it possible for multiple records in \code{dat_from} to be linked to \code{dat_to}
+#' @param linktype Should there be no more than one record in each dataset that can be linked (one:one), or is it possible for multiple records in \code{dat_from} to be linked to \code{dat_to}? Defaults to "one:one".
 #' @param maxdist Maximum distance (0-1) to consider a record a candidate. Defaults to 0.15 for male surname string distance. If using numeric distance (for instance year of birth), very different values could be needed.
 #' 
 #' @return A dataset containing all candidate pairs, and all columns in dat_from and dat_to. Columns with the same name will get a suffix "_from" or "_to".
 #' 
-#' blocking on multiple variables currently not supported, but could be done by using \code{candidates()} repeatedly and merging the results
-#' 
-#' string distance blocking is done using jaro-winkler string distances, ranging from 0 (perfect match) to 1 (completely dissimilar)
-#' 
-#' currently possible to return missing values when for a given record, no candidate is found. Should probably be fixed
 #' 
 #' @examples
 #' d1 = data.table::data.table(mlast = c("jong", "smid"), persid = c(1:2))
@@ -29,7 +31,8 @@
 #' @export
 candidates = function(dat_from, dat_to, 
     idvariable_from = "persid", idvariable_to = "persid",
-    blockvariable = "mlast", blocktype = c("string distance", "numeric"), 
+    blockvariable = "mlast", 
+    blocktype = c("string distance", "numeric"),
     linktype = c("one:one", "many:one"),
     maxdist = 0.15){
 
@@ -56,6 +59,9 @@ candidates = function(dat_from, dat_to,
             FUN = "-")
         candidate_list = apply(distmat, 1, function(x) which(abs(x) < maxdist))
     }
+     # add blocktype == exact?
+    # add multiple blocks?
+    # faster way than outer? can be used identically to stringdistmatrix though
 
     # handle maxdist according to type
 

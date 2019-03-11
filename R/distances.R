@@ -1,9 +1,3 @@
-# create distances etc in some sort of smart way 
-# make/take pairs of variables
-    # actually let's have candidates compare a sparse one, and
-    # then you just say what the ID is?
-# allow on/off for soundex
-
 #' Calculate distances between character and numeric variables
 #' 
 #' \code{distcalc} calculates string distances and numeric distances
@@ -13,15 +7,18 @@
 #' function: the variables from the original datasets have the 
 #' same name and are distinguished using \code{_from} and 
 #' \code{_to} suffixes.
-#' @param character_variables. The names of the character variables, without the suffixes. 
-#' @param numeric_variables. The names of the numeric variables, without the suffixes. 
+#' @param character_variables The names of the character variables, without the suffixes.  Set to a length zero vector if no variables are to be used (\code{c()}).
+#' @param numeric_variables The names of the numeric variables, without the suffixes.  Set to a length zero vector if no variables are to be used (\code{c()}).
+#' 
 #' @return the dataset with the necessary distances to predict links. Note that reassignment of the data.table is not necessary. The original dataset is modified in place
 #' 
-#' uses datatable to handle potentially large numer of candidates
-#' no need to assign to a new object
-#' if you do this, the original dataset is also modified
-#' maybe I should fix this?
 #' @examples
+#' d1 = data.table::data.table(mlast = c("jong", "smid"), persid = c(1:2))
+#' d2 = data.table::data.table(mlast = c("jongh", "jong", "smit"), persid = c(1:3))
+#' d1d2cnd = candidates(d1, d2)
+#' distcalc(d1d2cnd, character_variables = "mlast", numeric_variables = c())
+#' d1d2cnd
+#' 
 #' @export
 distcalc = function(dat, 
     character_variables = c("mlast", "mfirst", "wfirst", "minitials", "winitials", "mprof"),
@@ -46,3 +43,9 @@ distcalc = function(dat,
     }
     return(dat)
 }
+
+# create distances etc in some sort of smart way 
+# make/take pairs of variables
+    # actually let's have candidates compare a sparse one, and
+    # then you just say what the ID is?
+# allow on/off for soundex
