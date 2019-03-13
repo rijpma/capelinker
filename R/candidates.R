@@ -45,6 +45,10 @@ candidates = function(dat_from, dat_to,
     stopifnot(nrow(dat_from) > 0)
     stopifnot(nrow(dat_to) > 0)
 
+    if ((maxdist < 0 | maxdist > 1) & blocktype == "string distance"){
+        warning("String distance matching should have maxdist between 0 and 1.")
+    }
+
     if (blocktype == "string distance"){
         distmat = stringdist::stringdistmatrix(
             a = dat_from[, get(blockvariable)],
