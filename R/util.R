@@ -108,7 +108,7 @@ initials <- function(strings, return_NA_on_empty = FALSE){
         out[sapply(out, length) == 0] = ""
     }
 
-    sapply(out, stri_join, collapse = "")
+    sapply(out, stringi::stri_join, collapse = "")
 }
 
 #' Uniformise strings
