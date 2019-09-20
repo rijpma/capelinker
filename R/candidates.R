@@ -30,9 +30,13 @@
 #'  
 #' @export
 candidates = function(dat_from, dat_to, 
-    idvariable_from = "persid", idvariable_to = "persid",
     blockvariable = "mlast", 
-    blocktype = c("string distance", "numeric"),
+    idvariable_from = "persid", idvariable_to = "persid",
+    blocktype = c("string distance", 
+                 "numeric", 
+                 "bigram distance", 
+                 "idf bigram distance", 
+                 "soundex"),
     linktype = c("one:one", "many:one"),
     maxdist = 0.15){
 
@@ -45,9 +49,16 @@ candidates = function(dat_from, dat_to,
     stopifnot(nrow(dat_from) > 0)
     stopifnot(nrow(dat_to) > 0)
 
-    if ((maxdist < 0 | maxdist > 1) & blocktype == "string distance"){
-        warning("String distance matching should have maxdist between 0 and 1.")
+    if (linktype == "one:one" & (
+            any(duplicated(dat_from[[idvariable_from]]))
+          | any(duplicated(dat_to[[idvariable_to]])))){
+        warning("One to one matching, but idvariables not unique")
     }
+
+    if ((maxdist < 0 | maxdist > 1) & blocktype == "string distance"){
+        warning("Maxdist should be between 0 and 1.")
+    }
+    maxsim = 1 - maxdist # for similarity measures
 
     if (blocktype == "string distance"){
         distmat = stringdist::stringdistmatrix(
@@ -55,21 +66,45 @@ candidates = function(dat_from, dat_to,
             b = dat_to[, get(blockvariable)],
             method = 'jw', p = 0.1)
         candidate_list = apply(distmat, 1, function(x) which(x < maxdist))
+        # score_list = apply(distmat, 1, function(x) x[which(x < maxdist)])
     }
     if (blocktype == "numeric"){
-        distmat = outer(
+        simmat = 1 - outer(
             X = dat_from[, get(blockvariable)],
             Y = dat_to[, get(blockvariable)],
-            FUN = "-")
-        candidate_list = apply(distmat, 1, function(x) which(abs(x) < maxdist))
+            FUN = capelinker::gk)
+        candidate_list = apply(simmat, 1, function(x) which(abs(x) > maxsim))
+        # score_list = apply(simmat, 1, function(x) x[which(abs(x) < maxsim)])
     }
-     # add blocktype == exact?
-    # add multiple blocks?
-    # faster way than outer? can be used identically to stringdistmatrix though
-
-    # handle maxdist according to type
+    if (blocktype == "bigram distance"){
+        # it would be nice if this could have a boundary only at start, not at end
+        # you can add this to splitStrings manually 
+        # or even pass it in sim.strings using ...
+        simmat = qlcMatrix::sim.strings(
+            strings1 = dat_from[, get(blockvariable)],
+            strings2 = dat_to[, get(blockvariable)])
+        candidate_list = apply(simmat, 1, function(x) which(x > maxsim))
+        # score_list = apply(simmat, 1, function(x) x[which(x > maxsim)])
+    }
+    if (blocktype == "idf bigram distance"){
+        s1 = qlcMatrix::splitStrings(
+            strings = dat_from[, get(blockvariable)], 
+            simplify = TRUE)
+        s2 = qlcMatrix::splitStrings(
+            strings = dat_to[, get(blockvariable)],
+            simplify = TRUE)
+        m = jMatrix(rownames(s1), rownames(s2))
+        distmat = cosSparse((m$M1 * 1) %*% s1, (m$M2 * 1) %*% s2, weight = "idf")
+        candidate_list = apply(distmat, 1, function(x) which(x > maxsim))
+        # score_list = apply(distmat, 1, function(x) x[which(x > maxsim)])
+    }
+    if (blocktype == "soundex"){
+        candidate_list = lapply(phonetic(dat_from$mlast_woprefix), 
+            function(x) which(phonetic(dat_to$mlast_woprefix) %in% x))
+    }
 
     tomerge = dat_to[unlist(candidate_list), ]
+    # tomerge[, score:= unlist(score_list)]
     tomerge[, linked_to  := rep(dat_from[, get(idvariable_from)], times=sapply(candidate_list, length))]
     dat_from[, linked_from := get(idvariable_from)]
 
@@ -90,6 +125,11 @@ candidates = function(dat_from, dat_to,
 # clashses
 # maybe this list of names is stupid, because we'll need to 
 # enter the pairs in scoring function anyway
+
+# add blocktype == exact?
+# add multiple blocks?
+# faster way than outer? can be used identically to stringdistmatrix though
+# handle maxdist according to type
 
 # more thoughts
 # should accomodate one to many and many to one match
