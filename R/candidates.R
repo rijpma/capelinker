@@ -66,45 +66,48 @@ candidates = function(dat_from, dat_to,
             b = dat_to[, get(blockvariable)],
             method = 'jw', p = 0.1)
         candidate_list = apply(distmat, 1, function(x) which(x < maxdist))
-        # score_list = apply(distmat, 1, function(x) x[which(x < maxdist)])
+        score_list = apply(distmat, 1, function(x) x[which(x < maxdist)])
     }
     if (blocktype == "numeric"){
         simmat = 1 - outer(
             X = dat_from[, get(blockvariable)],
             Y = dat_to[, get(blockvariable)],
             FUN = capelinker::gk)
-        candidate_list = apply(simmat, 1, function(x) which(abs(x) > maxsim))
-        # score_list = apply(simmat, 1, function(x) x[which(abs(x) < maxsim)])
+        candidate_list = apply(simmat, 1, function(x) which(x > maxsim))
+        score_list = apply(simmat, 1, function(x) x[which(x > maxsim)])
     }
     if (blocktype == "bigram distance"){
-        # it would be nice if this could have a boundary only at start, not at end
-        # you can add this to splitStrings manually 
-        # or even pass it in sim.strings using ...
         simmat = qlcMatrix::sim.strings(
             strings1 = dat_from[, get(blockvariable)],
-            strings2 = dat_to[, get(blockvariable)])
+            strings2 = dat_to[, get(blockvariable)],
+            boundary = TRUE, 
+            left.boundary = "#", right.boundary = "#") # maybe no right boundary?
         candidate_list = apply(simmat, 1, function(x) which(x > maxsim))
-        # score_list = apply(simmat, 1, function(x) x[which(x > maxsim)])
+        score_list = apply(simmat, 1, function(x) x[which(x > maxsim)])
     }
     if (blocktype == "idf bigram distance"){
         s1 = qlcMatrix::splitStrings(
             strings = dat_from[, get(blockvariable)], 
-            simplify = TRUE)
+            simplify = TRUE,
+            boundary = TRUE, 
+            left.boundary = "#", right.boundary = "#")
         s2 = qlcMatrix::splitStrings(
             strings = dat_to[, get(blockvariable)],
-            simplify = TRUE)
+            simplify = TRUE,
+            boundary = TRUE, 
+            left.boundary = "#", right.boundary = "#")
         m = jMatrix(rownames(s1), rownames(s2))
-        distmat = cosSparse((m$M1 * 1) %*% s1, (m$M2 * 1) %*% s2, weight = "idf")
-        candidate_list = apply(distmat, 1, function(x) which(x > maxsim))
-        # score_list = apply(distmat, 1, function(x) x[which(x > maxsim)])
+        simmat = cosSparse((m$M1 * 1) %*% s1, (m$M2 * 1) %*% s2, weight = "idf")
+        candidate_list = apply(simmat, 1, function(x) which(x > maxsim))
+        score_list = apply(simmat, 1, function(x) x[which(x > maxsim)])
     }
     if (blocktype == "soundex"){
-        candidate_list = lapply(phonetic(dat_from$mlast_woprefix), 
-            function(x) which(phonetic(dat_to$mlast_woprefix) %in% x))
+        candidate_list = lapply(phonetic(dat_from[[blockvariable]]), 
+            function(x) which(phonetic(dat_to[[blockvariable]]) %in% x))
     }
 
     tomerge = dat_to[unlist(candidate_list), ]
-    # tomerge[, score:= unlist(score_list)]
+    tomerge[, score:= unlist(score_list)]
     tomerge[, linked_to  := rep(dat_from[, get(idvariable_from)], times=sapply(candidate_list, length))]
     dat_from[, linked_from := get(idvariable_from)]
 
