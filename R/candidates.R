@@ -24,8 +24,8 @@
 #' 
 #' 
 #' @examples
-#' d1 = data.table::data.table(mlast = c("jong", "smid"), persid = c(1:2))
-#' d2 = data.table::data.table(mlast = c("jongh", "jong", "smit"), persid = c(1:3))
+#' d1 = data.table::data.table(mlast = c("jong", "smid", "nauda"), persid = c(1:3))
+#' d2 = data.table::data.table(mlast = c("jongh", "jong", "smit", "veld"), persid = c(1:4))
 #' candidates(d1, d2)
 #'  
 #' @export
@@ -66,7 +66,8 @@ candidates = function(dat_from, dat_to,
             b = dat_to[, get(blockvariable)],
             method = 'jw', p = 0.1)
         candidate_list = apply(distmat, 1, function(x) which(x < maxdist))
-        score_list = apply(distmat, 1, function(x) x[which(x < maxdist)])
+        score_list =distmat[rep(1:length(candidate_list), sapply(candidate_list, length)) + nrow(distmat) * (unlist(candidate_list) - 1)]
+        # score_list = apply(distmat, 1, function(x) x[which(x < maxdist)])
     }
     if (blocktype == "numeric"){
         simmat = 1 - outer(
@@ -80,7 +81,7 @@ candidates = function(dat_from, dat_to,
         simmat = qlcMatrix::sim.strings(
             strings1 = dat_from[, get(blockvariable)],
             strings2 = dat_to[, get(blockvariable)],
-            boundary = TRUE, 
+            boundary = TRUE,
             left.boundary = "#", right.boundary = "#") # maybe no right boundary?
         candidate_list = apply(simmat, 1, function(x) which(x > maxsim))
         score_list = apply(simmat, 1, function(x) x[which(x > maxsim)])
@@ -89,12 +90,12 @@ candidates = function(dat_from, dat_to,
         s1 = qlcMatrix::splitStrings(
             strings = dat_from[, get(blockvariable)], 
             simplify = TRUE,
-            boundary = TRUE, 
+            boundary = TRUE,
             left.boundary = "#", right.boundary = "#")
         s2 = qlcMatrix::splitStrings(
             strings = dat_to[, get(blockvariable)],
             simplify = TRUE,
-            boundary = TRUE, 
+            boundary = TRUE,
             left.boundary = "#", right.boundary = "#")
         m = jMatrix(rownames(s1), rownames(s2))
         simmat = cosSparse((m$M1 * 1) %*% s1, (m$M2 * 1) %*% s2, weight = "idf")
