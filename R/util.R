@@ -232,3 +232,28 @@ stringdist_closest = function(string){
 gk = function(x1, x2, sigma = 1){
     exp(-(sqrt((x1 - x2)^2)) / (sigma^2))
 }
+
+#' xgb.DMatrix from dataframe and formula
+#' 
+#' \code{xgm_ff} creates a xgb::xgb.DMatrix from a data.frame and formula
+#' 
+#' @param dat a data.frame
+#' @param f a formula. It must have a response term.
+#' @param labelled whether the data.frame contains the 
+#' 
+xgbm_ff = function(dat, f, labelled = TRUE){
+
+    if (attr(terms(f), "response") == 0) stop("Expecting formula with response")
+
+    predictors = all.vars(f)[-1]
+    response = all.vars(f)[1]
+
+    if (labelled){
+        xgb.DMatrix(
+            data = as.matrix(dat[, ..predictors]),
+            label = as.matrix(dat[[response]]))
+    } else {
+        xgb.DMatrix(
+            data = as.matrix(dat[, ..predictors]))
+    }
+}
