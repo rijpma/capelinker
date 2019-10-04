@@ -1,3 +1,5 @@
+# todo: make this take a modstring variable
+
 #' Check whether dataset is ready for linkage
 #' 
 #' \code{preflight} checks whether a dataset is ready for 
@@ -61,26 +63,53 @@
 #' 
 #' @import data.table
 #' @export
-preflight = function(dat){
-    vrbs_baptisms_sparse = c("mlast", "mfirst", "wfirst", "year")
-    vrbs_baptisms_full = c("mlast", "mfirst", "wfirst", "winitials", "minitials", "mprof", "year")
+preflight = function(dat,
+    modstring = c("m_rf_baptisms_sparse", "m_rf_baptisms_full", "opgaafrol_full")){
 
-    missing_v_sparse = setdiff(vrbs_baptisms_sparse, names(dat))
-    missing_v_full = setdiff(vrbs_baptisms_full, names(dat))
+    modstring = match.arg(modstring)
 
-    cat("Missing for baptisms sparse:", missing_v_sparse, sep = "\n")
-    cat("Missing for baptisms full:", missing_v_full, sep = "\n")
+    # pattern = "dist|sdx"
+    # data("pretrained_models")
+    # vrbs = sapply(pretrained_models, `[[`, "variables")
+    # lapply(vrbs, function(x) unique(gsub(pattern, "", x[grepl(pattern, x)])))
+    # vrbs = pretrained_models[[modstring]]$variables
+    # vrbs = gsub(pattern, "", vrbs[grepl(pattern, vrbs)])
 
-    present_v_sparse = setdiff(vrbs_baptisms_sparse, missing_v_sparse)
-    present_v_full = setdiff(vrbs_baptisms_full, missing_v_full)
+    vrblist = list(
+        m_rf_baptisms_sparse = c("mlast", "mfirst", "wfirst", "year"),
+        m_rf_baptisms_full = c("mlast", "mfirst", "wfirst", "winitials", "minitials", "mprof", "year"),
+        opgaafrol_full = c("mlast", "mfirst", "wfirst", "wlast", "winitials", "minitials", "settlerchildren")
+    )
+    vrbs = vrblist[[modstring]]
+
+    # vrbs_baptisms_sparse = c("mlast", "mfirst", "wfirst", "year")
+    # vrbs_baptisms_full = c("mlast", "mfirst", "wfirst", "winitials", "minitials", "mprof", "year")
+    # vrbs_opgaafrol_full = c("mlast", "mfirst", "wfirst", "wlast", "winitials", "minitials", "settlerchildren")
+
+    vrbs_missing = setdiff(vrbs, names(dat))
+    # missing_v_bapt_sparse = setdiff(vrbs_baptisms_sparse, names(dat))
+    # missing_v_bapt_full = setdiff(vrbs_baptisms_full, names(dat))
+    # missing_v_opg_full = setdiff(vrbs_opgaafrol_full, names(dat))
+
+    cat("Missing for ", modstring, ": \n",vrbs_missing, 
+        "\n--------------\n")
+    # cat("Missing for baptisms sparse:", missing_v_bapt_sparse, sep = "\n")
+    # cat("Missing for baptisms full:", missing_v_bapt_full, sep = "\n")
+    # cat("Missing for opgaafrol_full:", missing_v_opg_full, sep = "\n")
+
+    vrbs_present = setdiff(vrbs, vrbs_missing)
+    # present_v_sparse = setdiff(vrbs_baptisms_sparse, missing_v_bapt_sparse)
+    # present_v_full = setdiff(vrbs_baptisms_full, missing_v_bapt_full)
 
     classes = c(
         mlast = "character",
         mfirst = "character",
+        wlast = "character",
         wfirst = "character",
         winitials = "character",
         minitials = "character",
         mprof = "character",
+        settlerchildren = "numeric",
         year = "numeric"
     )
 
@@ -89,52 +118,55 @@ preflight = function(dat){
     # classes_should_be = classes[names(classes) %in% names(dat_classes)] # [match(names(dat_classes), names(classes))]
     classes_are = dat_classes[names(dat_classes) %in% names(classes)] # [match(names(dat_classes), names(classes))]
 
-    print(data.frame(classes_are = classes_are[names(classes)],
-        classes_should_be = classes))
+    print(
+        data.frame(
+            classes_should_be = classes,
+            classes_are = classes_are[names(classes)]))
 
     cat("\nShare missing variables (cannot be matched):\n")
     print(dat[, lapply(.SD, function(x) mean(is.na(x), na.rm = TRUE)), 
-        .SDcols = present_v_sparse])
+        .SDcols = vrbs_present])
     cat("\n\n")
     
     cat('Share empty variables ("") (matching may fail):\n')
     print(dat[, lapply(.SD, function(x) mean(nchar(x) == 0, na.rm = TRUE)), 
-        .SDcols = present_v_sparse])
+        .SDcols = vrbs_present])
     cat("\n\n")
     
     cat('Share length one string variables ("*") (matching may fail):\n')
     print(dat[, lapply(.SD, function(x) mean(nchar(x) == 1, na.rm = TRUE)), 
-        .SDcols = present_v_sparse])
+        .SDcols = vrbs_present])
     cat("\n\n")
 
     # these regex need a hard look
     # or just always convert to lower case
     cat('Share Sentence Case (matching requires consistency in case between datasets):\n')
     print(dat[, lapply(.SD, function(x) mean(grepl("[A-Z][a-z]+", x), na.rm = TRUE)), 
-        .SDcols = present_v_sparse])
+        .SDcols = vrbs_present])
     cat("\n\n")
 
+    # this seems a bit broken: why not do toupper(x) != x & tolower on the one above?
     cat('Share UPPER CASE (matching requires consistency in case between datasets):\n')
     print(dat[, lapply(.SD, function(x) mean(grepl("^[A-Z ]+$", x), na.rm = TRUE)), 
-        .SDcols = present_v_sparse])
+        .SDcols = vrbs_present])
     cat("\n\n")
 
     cat('Share lower case (matching requires consistency in case between datasets):\n')
     print(dat[, lapply(.SD, function(x) mean(grepl("^[a-z ]+$", x), na.rm = TRUE)), 
-        .SDcols = present_v_sparse])
+        .SDcols = vrbs_present])
     cat("\n\n")
 
     cat('Share accented letters and non-alphabetic or symbols per variable (matching might require consistency):\n')
-    print(dat[, lapply(.SD, function(x) mean(grepl("[^A-z ]", x))), .SDcols = present_v_sparse])
+    print(dat[, lapply(.SD, function(x) mean(grepl("[^A-z ]", x))), .SDcols = vrbs_present])
     print(
-        lapply(dat[, .SD, .SDcols = present_v_sparse], function(column){
+        lapply(dat[, .SD, .SDcols = vrbs_present], function(column){
             unique(c(stringi::stri_extract_all_regex(column, "[^A-z ]", simplify = TRUE, omit_no_match = TRUE)))
         })
     )
     cat("\n\n")
 
     cat('Range (important for numeric variables):\n')
-    print(dat[, lapply(.SD, range, na.rm = TRUE), .SDcols = present_v_sparse])
+    print(dat[, lapply(.SD, range, na.rm = TRUE), .SDcols = vrbs_present])
     cat("\n\n")
 
     # mfirst has middle names?
