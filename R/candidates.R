@@ -98,7 +98,7 @@ candidates = function(dat_from, dat_to,
             boundary = TRUE,
             left.boundary = "#", right.boundary = "#")
         m = qlcMatrix::jMatrix(rownames(s1), rownames(s2))
-        simmat = qlcMatrix::cosSparse((m$M1 * 1) %*% s1, (m$M2 * 1) %*% s2, weight = "idf")
+        simmat = qlcMatrix::cosSparse((m$M1 * 1) %*% s1, (m$M2 * 1) %*% s2, weight = qlcMatrix::idf)
         candidate_list = apply(simmat, 1, function(x) which(x > maxsim))
         score_list = apply(simmat, 1, function(x) x[which(x > maxsim)])
     }
