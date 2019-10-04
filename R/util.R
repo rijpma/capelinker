@@ -120,7 +120,7 @@ initials <- function(strings, return_NA_on_empty = FALSE){
 uniformise_string <- function(string, maxdist=0.2, quiet=FALSE){
     str_srtd <- names(sort(-table(string)))
     n_start <- length(str_srtd)
-    strmat <- stringdistmatrix(str_srtd, str_srtd, method='jw', p=0.1)
+    strmat <- stringdist::stringdistmatrix(str_srtd, str_srtd, method='jw', p=0.1)
     fill <- NULL
 
     # find similar strings, replace with one, drop those from strmat, and repeat
