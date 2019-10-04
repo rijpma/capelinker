@@ -217,3 +217,18 @@ stringdist_closest = function(string){
     ))
 }
 
+
+#' Two dimensional Gaussian kernel
+#' 
+#' \code{gk} calculates the Gaussian similarity as the parallel distances between the elements of two vectors
+#' 
+#' The Gaussian similarity is calculated as \eqn{d(x_1, x_2) = e ^{ - \frac{\sqrt{(x_1 - x_2) ^ 2}}{\sigma^2}}}
+#' 
+#' @param x1 the numbers in x1 that should be compared to those in x2
+#' @param x2 the numbers in x2 that should be compared to those in x1
+#' @param sigma parameter controlling the spread of the gaussian curve. The 
+#' higher, the more tolerant we are are of differences. Defaults to 1.
+#' 
+gk = function(x1, x2, sigma = 1){
+    exp(-(sqrt((x1 - x2)^2)) / (sigma^2))
+}
