@@ -4,21 +4,22 @@
 \alias{candidates}
 \title{Create candidate links from two datasets.}
 \usage{
-candidates(dat_from, dat_to, idvariable_from = "persid",
-  idvariable_to = "persid", blockvariable = "mlast",
-  blocktype = c("string distance", "numeric"), linktype = c("one:one",
-  "many:one"), maxdist = 0.15)
+candidates(dat_from, dat_to, blockvariable = "mlast",
+  idvariable_from = "persid", idvariable_to = "persid",
+  blocktype = c("string distance", "numeric", "bigram distance",
+  "idf bigram distance", "soundex"), linktype = c("one:one", "many:one"),
+  maxdist = 0.15)
 }
 \arguments{
 \item{dat_from}{a data.table}
 
 \item{dat_to}{a data.table}
 
+\item{blockvariable}{String giving the name of the blocking varariable. Distance between this variable in both datasets determines whether a pair of records is a candidate. Should be present in both datasets. Defaults to "mlast", the male surname.}
+
 \item{idvariable_from}{String giving the identifier variable in dat_from.}
 
 \item{idvariable_to}{String giving the identifier variable in dat_from.}
-
-\item{blockvariable}{String giving the name of the blocking varariable. Distance between this variable in both datasets determines whether a pair of records is a candidate. Should be present in both datasets. Defaults to "mlast", the male surname.}
 
 \item{blocktype}{Type of blocking: string distance (default) or numeric.}
 
@@ -42,8 +43,8 @@ String distance blocking is done using Jaro-Winkler string distances, which de-e
 It is currently possible to return missing values when for a given record, no candidate is found. While these records can never be matched, they are left in to make comparisons of the dataset easier.
 }
 \examples{
-d1 = data.table::data.table(mlast = c("jong", "smid"), persid = c(1:2))
-d2 = data.table::data.table(mlast = c("jongh", "jong", "smit"), persid = c(1:3))
+d1 = data.table::data.table(mlast = c("jong", "smid", "nauda"), persid = c(1:3))
+d2 = data.table::data.table(mlast = c("jongh", "jong", "smit", "veld"), persid = c(1:4))
 candidates(d1, d2)
  
 }

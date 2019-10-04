@@ -2,9 +2,9 @@
 % Please edit documentation in R/util.R
 \name{initials}
 \alias{initials}
-\title{Create initials from a string of names}
+\title{Create initials from a string containing names}
 \usage{
-initials(strings)
+initials(strings, return_NA_on_empty = FALSE)
 }
 \arguments{
 \item{strings}{string containing names, seperated by spaces or periods (or both). Vectorised.}

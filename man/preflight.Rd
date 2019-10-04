@@ -4,7 +4,8 @@
 \alias{preflight}
 \title{Check whether dataset is ready for linkage}
 \usage{
-preflight(dat)
+preflight(dat, modstring = c("m_rf_baptisms_sparse", "m_rf_baptisms_full",
+  "opgaafrol_full"))
 }
 \arguments{
 \item{dat}{the dataset to check, as a data.table.}
@@ -13,8 +14,7 @@ preflight(dat)
 Text to the console showing the results of the tests.
 }
 \description{
-\code{preflight} checks whether a dataset is ready for 
-linkage and prints the results.
+\code{preflight} checks whether a dataset is ready for linkage
 }
 \details{
 Preflight does a number of checks on the dataset.
@@ -28,16 +28,15 @@ Preflight does a number of checks on the dataset.
          choice to the user. Different cases do count for the string distance.
      \item The share of accented letters and non-alphabetic symbols by variable. A
          gain, these are not automatically fixed, but left to the user's discretion. 
-         Note that some analphabetics (for instance "." or "-") could be frequently and consistently applied in the data. String distance calculation does not fail on accented letters, but it does count towards the string distance.
+         Note that some analphabetics (for instance "." or "-") could be frequently 
+         and consistently applied in the data. String distance calculation does not 
+         fail on accented letters, but it does count towards the string distance.
 }
 
 Currently, capelinker expects the dataset to be about couples. That is, data about 
 husband and spouse is used for linkage because together they contain far more 
 information than a single individual. The pretrained data is done on marriage and the 
 parents baptism registries.
-
-Later versions will include models based on the opgaafrolle, but these too usually 
-provide husband and spouse names so linkage will work best on data with couples.
 
 The following variables are expected by the functions and models:
 \itemize{
@@ -48,7 +47,11 @@ The following variables are expected by the functions and models:
      \item \code{minitils} male initials in the form JF (so no K, and no punctuation)
      \item \code{winitils} female initials in the form JF (so no K, and no punctuation)
      \item \code{year} the year of observation of the two records
-     \item \code{mprof} the male profession
+}
+
+For the baptisms
+\itemize{
+ \item \code{mprof} the male profession
 }
 
 For the opgaafrollen.
@@ -57,12 +60,14 @@ For the opgaafrollen.
  \item \code{wifeinboth}
  \item \code{spousenamedist}
  \item \code{namefreq}
+ \item \code{settlerchildrendist}
 }
 
 The following models can be used 
 \itemize{
  \item \code{m_rf_baptisms_sparse} a model linking parents in baptism records to marriage records, based on minimal information: male surname (mlast), male first name (mfirst), female first name (wfirst, female surname not used because it would typically not be reported in the baptism records), and year of marriage/baptism (year).
  \item \code{m_rf_baptisms_full} a model linking parents in baptism and marriage records, using additional information: initials, profession, and soundex distances of the names. Performance is not much better than the sparse model.
+ \item \code{opgaafrol_full} a model linking households from one year to the next
 }
 }
 \examples{
