@@ -241,6 +241,7 @@ gk = function(x1, x2, sigma = 1){
 #' @param f a formula. It must have a response term.
 #' @param labelled whether the data.frame contains the 
 #' 
+#' @export
 xgbm_ff = function(dat, f, labelled = TRUE){
 
     if (attr(terms(f), "response") == 0) stop("Expecting formula with response")
@@ -248,12 +249,16 @@ xgbm_ff = function(dat, f, labelled = TRUE){
     predictors = all.vars(f)[-1]
     response = all.vars(f)[1]
 
+    mm = model.matrix(
+        object = f, 
+        model.frame(f, dat, na.action = "na.pass")
+    )
+
     if (labelled){
-        xgb.DMatrix(
-            data = as.matrix(dat[, ..predictors]),
+        xgboost::xgb.DMatrix(
+            data = mm,
             label = as.matrix(dat[[response]]))
     } else {
-        xgb.DMatrix(
-            data = as.matrix(dat[, ..predictors]))
+        xgboost::xgb.DMatrix(data = mm)
     }
 }
