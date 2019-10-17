@@ -11,14 +11,10 @@ devtools::document()
 devtools::load_all()
 
 ## opgaafrollen
-
+# -------------
 opg = readRDS("~/repos/capelinker/data_raw/opgaafrollen.rds.gz")
 opg[, mfirst_single := stri_extract_first_words(mfirst)]
 opg[!is.na(mfirst_single) & !is.na(year) & !is.na(mlast), mname_uniqueness := stringdist_closest(stri_join(mfirst_single, mlast)), by = year]
-
-tra = fread("/Users/auke/Dropbox/opgaafrol/matched.csv")
-setnames(tra, 10:11, c("persid_1828", "persid_1826"))
-tra = tra[!is.na(persid_1828) & !is.na(persid_1826), ]
 
 cnd = capelinker::candidates(
     dat_from = opg[year == 1828 & grepl("^[A-L]", mlast), ], # 608
@@ -26,9 +22,8 @@ cnd = capelinker::candidates(
     maxdist = 0.15,
     blockvariable = "mlast") # mlast regular
 
-cnd[!is.na(persid_from) & !is.na(persid_to), 
-    correct := paste0(persid_from, persid_to) %in% paste0(tra$persid_1828, tra$persid_1826)]
-cnd[correct == TRUE, list(mlast_from, mlast_to)]
+cnd[, correct := linkid_from == linkid_to]
+cnd[is.na(correct), correct := FALSE]
 cnd = cnd[!is.na(correct), ]
 
 cnd[, uniqueN(persid_from)] # 570
