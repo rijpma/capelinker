@@ -3,6 +3,7 @@
 export(candidates)
 export(distcalc)
 export(expand_index)
+export(gk)
 export(initials)
 export(label)
 export(normalise)

@@ -229,6 +229,7 @@ stringdist_closest = function(string){
 #' @param sigma parameter controlling the spread of the gaussian curve. The 
 #' higher, the more tolerant we are are of differences. Defaults to 1.
 #' 
+#' @export
 gk = function(x1, x2, sigma = 1){
     exp(-(sqrt((x1 - x2)^2)) / (sigma^2))
 }
