@@ -12,6 +12,85 @@ devtools::load_all()
 
 ## opgaafrollen
 # -------------
+
+# graaf reinet
+# stellenbosch
+# combined
+# full and sparse
+
+rein = readRDS("data_raw/candidates_miss.rds.gz")
+stel = readRDS("data_raw/stel_candidates_miss.rds.gz")
+both = rbindlist(list(rein, stel), fill = TRUE, idcol = "region")
+regions = unique(both$region)
+both[, (paste0("region", as.character(regions))) := lapply(unique(region), function(x) as.numeric(region == x))]
+
+f = formula(correct ~ 
+    mlastdist + mfirstdist + minitialsdist_osa + 
+    mlastsdx + 
+    mfirstsdx + 
+    wlastdist + wfirstdist + winitialsdist_osa + 
+    wlastsdx + 
+    wfirstsdx + 
+    namefreq_from + 
+    spousenamedist_from + 
+    namefreq_to + 
+    spousenamedist_to + 
+    wifepresent_from + 
+    wifepresent_to + 
+    wifeinboth + 
+    settlerchildrengauss + 
+    nextmfirst + 
+    mfirst_uniqueness_to +
+    mfirst_uniqueness_from +
+    matches + 
+    husb_wife_surnamedist + 
+    region1)
+
+f_sparse = update(f, . ~ . 
+    - wfirstsdx - mfirstsdx - mlastsdx - wlastsdx 
+    - wifeinboth - wifepresent_to - wifepresent_from
+    - namefreq_to - namefreq_from
+    - spousenamedist_to - spousenamedist_from)
+
+set.seed(123871)
+both[, train := persid_from %in% sample(unique(persid_from), ceiling(length(unique(persid_from)) * 0.7))]
+trn_both = both[train == 1]
+vld_both = both[train == 0]
+
+m_boost_stel_rein = xgboost::xgb.train(
+    data = capelinker::xgbm_ff(trn_both, f),
+    nrounds = 1000,
+    params = list(
+        max_depth = 6,        # default 6
+        min_child_weight = 1, # default 1
+        gamma = 1,            # default 0
+        eta = 0.3,            # default 0.3
+        subsample = 0.8,        # default 1
+        colsample_bytree = 0.5, # default 1
+        objective = "binary:logistic"
+))
+
+m_boost_stel_rein_sparse = xgboost::xgb.train(
+    data = capelinker::xgbm_ff(trn_both, f_sparse),
+    nrounds = 1000,
+    params = list(
+        max_depth = 6,        # default 6
+        min_child_weight = 1, # default 1
+        gamma = 1,            # default 0
+        eta = 0.3,            # default 0.3
+        subsample = 0.8,        # default 1
+        colsample_bytree = 0.5, # default 1
+        objective = "binary:logistic"
+))
+
+# predictions = data.table(
+#     wife = vld_both$wife * 2, # normalised originally
+#     correct = vld_both$correct,
+#     pred_bos = predict(mb_stel_rein, newdata = xgbm_ff(vld_both, f)))
+
+
+
+
 opg = readRDS("~/repos/capelinker/data_raw/opgaafrollen.rds.gz")
 opg[, mfirst_single := stri_extract_first_words(mfirst)]
 opg[!is.na(mfirst_single) & !is.na(year) & !is.na(mlast), mname_uniqueness := stringdist_closest(stri_join(mfirst_single, mlast)), by = year]
@@ -183,6 +262,12 @@ m_rf_baptisms_sparse = randomForest(
 
 
 pretrained_models = list(
+    m_boost_stel_rein = list(
+        model = m_boost_stel_rein,
+        variables = all.vars(f)[-1]),
+    m_boost_stel_rein_sparse = list(
+        model = m_boost_stel_rein_sparse,
+        variables = all.vars(f_sparse)[-1]),
     m_rf_baptisms_sparse = list(
         model = m_rf_baptisms_sparse,
         variables = all.vars(formula(m_rf_baptisms_sparse))[-1]
