@@ -10,7 +10,9 @@ Imports:
     data.table (>= 1.10.0),
     stringdist (>= 0.9.4.6),
     randomForest (>= 4.6-12),
-    stringi (>= 1.2.2)
+    stringi (>= 1.2.2),
+    xgboost (>= 0.71.1),
+    qlcMatrix (>= 0.9.7)
 LazyData: true
 RoxygenNote: 6.0.1
 Suggests: testthat
