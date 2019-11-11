@@ -53,13 +53,15 @@ f_sparse = update(f, . ~ .
     - spousenamedist_to - spousenamedist_from)
 
 set.seed(123871)
-both[, train := persid_from %in% sample(unique(persid_from), ceiling(length(unique(persid_from)) * 0.7))]
+share_train = 0.7
+both[, train := persid_from %in% sample(unique(persid_from), ceiling(length(unique(persid_from)) * share_train)]
 trn_both = both[train == 1]
 vld_both = both[train == 0]
 
 m_boost_stel_rein = xgboost::xgb.train(
     data = capelinker::xgbm_ff(trn_both, f),
     nrounds = 1000,
+    # watchlist = list(train = xgbm_ff(trn_both, f), eval = xgbm_ff(vld_both, f)),
     params = list(
         max_depth = 6,        # default 6
         min_child_weight = 1, # default 1
@@ -83,11 +85,11 @@ m_boost_stel_rein_sparse = xgboost::xgb.train(
         objective = "binary:logistic"
 ))
 
-# predictions = data.table(
-#     wife = vld_both$wife * 2, # normalised originally
-#     correct = vld_both$correct,
-#     pred_bos = predict(mb_stel_rein, newdata = xgbm_ff(vld_both, f)))
-
+predictions = data.table(
+    wife = vld_both$wife * 2, # normalised originally
+    correct = vld_both$correct,
+    pred_bos = predict(m_boost_stel_rein, newdata = xgbm_ff(vld_both, f)))
+# table(predictions$correct, predictions$pred_bos > 0.5)
 
 
 
