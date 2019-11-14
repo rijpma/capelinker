@@ -4,8 +4,8 @@
 \alias{preflight}
 \title{Check whether dataset is ready for linkage}
 \usage{
-preflight(dat, modstring = c("m_rf_baptisms_sparse", "m_rf_baptisms_full",
-  "opgaafrol_full"))
+preflight(dat, modstring = c("m_rf_baptisms_sparse",
+  "m_rf_baptisms_full", "opgaafrol_full"))
 }
 \arguments{
 \item{dat}{the dataset to check, as a data.table.}
