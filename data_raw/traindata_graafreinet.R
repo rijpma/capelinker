@@ -174,4 +174,4 @@ out = tra[out, on = c("persid", "year")]
 rein = copy(out)
 
 saveRDS(rein, "data_raw/opgaafrollen.rds.gz")
-save(rein, file = "data/rein.rda")
+save(rein, file = "data/rein.rda", version = 2)
