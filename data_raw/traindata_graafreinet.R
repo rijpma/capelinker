@@ -24,7 +24,6 @@ tra = fread("/Users/auke/Dropbox/opgaafrol/matched.csv")
 setnames(tra, 10:11, c("persid_1828", "persid_1826"))
 tra = tra[!is.na(persid_1828) & !is.na(persid_1826), ]
 
-
 # !validUTF8
 opg[!validUTF8(lastnamemen), lastnamemen]
 opg[, lastnamemen := gsub('\x86', 'U', opg$lastnamemen)]
@@ -45,25 +44,32 @@ opg[grep("[^A-Z .]", lastnamemen), .(firstnamemen, lastnamemen)]
 opg[grep("[^A-Z .]", firstnamewomen), .(firstnamewomen, lastnamewomen)]
 opg[grep("[^A-Z .]", lastnamewomen), .(firstnamewomen, lastnamewomen)]
 
+# set "" to NA
+opg[lastnamemen == "", lastnamemen := NA]
+opg[firstnamemen == "", firstnamemen := NA]
+opg[lastnamewomen == "", lastnamewomen := NA]
+opg[firstnamewomen == "", firstnamewomen := NA]
+
 # manual:
 opg[lastnamemen == "ARREAR: SMIT", lastnamemen := "SMIT"]
-opg[lastnamewomen == "NO NO. 1542", lastnamewomen := ""]
-opg[lastnamewomen == "GEEN VROU MAAR IN SYFERKOLOM)", lastnamewomen := ""]
-opg[lastnamewomen == "WOMAN INDICATED BUT NO NAMES)", lastnamewomen := ""]
+opg[lastnamewomen == "NO NO. 1542", lastnamewomen := NA]
+opg[lastnamewomen == "GEEN VROU MAAR IN SYFERKOLOM)", lastnamewomen := NA]
+opg[lastnamewomen == "WOMAN INDICATED BUT NO NAMES)", lastnamewomen := NA]
 
 opg[lastnamewomen == "VISAGIE(NO SURNAME) SARA MARGARETHA", firstnamewomen := "SARA MARGARETHA"]
 opg[lastnamewomen == "SARA CATHARINA (GEEN VAN)", firstnamewomen := "SARA CATHARINA"]
-opg[lastnamewomen == "SARA CATHARINA (GEEN VAN)", lastnamewomen := ""]
+opg[lastnamewomen == "SARA CATHARINA (GEEN VAN)", lastnamewomen := NA]
 opg[lastnamewomen == "ANNA (NO SURNAME)", firstnamewomen := "ANNA"]
-opg[lastnamewomen == "ANNA (NO SURNAME)", lastnamewomen := ""]
+opg[lastnamewomen == "ANNA (NO SURNAME)", lastnamewomen := NA]
 opg[lastnamewomen == "ANNA JACOBA (NO SURNAME)", firstnamewomen := "ANNA JACOBA"]
-opg[lastnamewomen == "ANNA JACOBA (NO SURNAME)", lastnamewomen := ""]
+opg[lastnamewomen == "ANNA JACOBA (NO SURNAME)", lastnamewomen := NA]
 
 # rest can be done with drop after analphabetics
 opg[grep("[^A-Z .]", firstnamemen), firstnamemen := stringi::stri_replace_all_regex(firstnamemen, "[^A-Z .].*", "")]
 opg[grep("[^A-Z .]", firstnamewomen), firstnamewomen := stringi::stri_replace_all_regex(firstnamewomen, "[^A-Z .].*", "")]
 opg[grep("[^A-Z .]", lastnamemen), lastnamemen := stringi::stri_replace_all_regex(lastnamemen, "[^A-Z .].*", "")]
 opg[grep("[^A-Z .]", lastnamewomen), lastnamewomen := stringi::stri_replace_all_regex(firstnamemen, "[^A-Z .].*", "")]
+
 # different from original which still included the ampersand itself
 # so then we do this
 opg[grep("[^A-Z .]", firstnamemen), firstnamemen := stringi::stri_extract_first_regex(firstnamemen, ".*[^A-Z .]")]
@@ -83,31 +89,31 @@ opg[, lastnamewomen := stringi::stri_trim_both(lastnamewomen)]
 opg[(grepl("^ *$", firstnamemen) & grepl("^ *$", lastnamemen)), list(firstnamemen, lastnamemen, firstnamewomen, lastnamewomen)]
 opg[(grepl("^ *$", firstnamemen) & grepl("^ *$", lastnamemen) & grepl("^ *$", firstnamewomen) & grepl("^ *$", lastnamewomen)), list(firstnamemen, lastnamemen, firstnamewomen, lastnamewomen)]
 
-# drop of NA
-opg[firstnamemen == "X", firstnamemen := ""]
-opg[lastnamemen == "X", lastnamemen := ""]
-opg[firstnamewomen == "X", firstnamewomen := ""]
-opg[lastnamewomen == "X", lastnamewomen := ""]
+# drop or NA
+opg[firstnamemen == "X", firstnamemen := NA]
+opg[lastnamemen == "X", lastnamemen := NA]
+opg[firstnamewomen == "X", firstnamewomen := NA]
+opg[lastnamewomen == "X", lastnamewomen := NA]
 opg[grepl("^ *$", firstnamemen), list(firstnamemen, lastnamemen)]
 
 # in old opgaafrollen: mfirst == "" -> initals = ""
-# right now NA == ""
+# now: models takes NA, so missing names NA, so initials AN
 opg[, minitials := initials(firstnamemen, return_NA_on_empty = FALSE)]
 opg[, winitials := initials(firstnamewomen, return_NA_on_empty = FALSE)]
 
-opg[, wifepresent := !(firstnamewomen == '' & lastnamewomen == '')] # because F & T = F
+opg[, wifepresent := !(is.na(firstnamewomen)  & !is.na(lastnamewomen))] # because F & T = F
 opg[, spousenamedist := stringdist::stringdist(lastnamemen, lastnamewomen, method='jw', p=0.1)]
 opg[, wineproducer := as.numeric(vines) > 0 & !is.na(vines)]
-opg[, districtall := ifelse(districtdum=='.', -1, as.numeric(districtdum))]
+opg[, districtall := ifelse(districtdum == ".", -1, as.numeric(districtdum))]
 
 opg[, mfullname := paste(lastnamemen, firstnamemen)]
 
-opg[firstnamemen != "", 
+opg[!is.na(firstnamemen), 
     mfirst_uniqueness := rowMeans(
         stringdist::stringdistmatrix(firstnamemen, firstnamemen, method = 'jw'),
         na.rm = TRUE), 
     by = year]
-opg[firstnamemen != "", 
+opg[!is.na(firstnamemen), 
     mfirst_cos_uniqueness := 1 - rowMeans(qlcMatrix::sim.strings(firstnamemen), na.rm = TRUE), 
     by = year]
 
@@ -115,7 +121,7 @@ opg[, lastnamemen_unif := uniformise_string(lastnamemen, quiet = TRUE)]
 opg[, namefreq := .N, by = lastnamemen_unif]
 
 # alternative; maybe w/o by = year?
-opg[lastnamemen != "", 
+opg[!is.na(lastnamemen), 
     mlast_uniqueness := 1 - rowMeans(qlcMatrix::sim.strings(lastnamemen)), 
     by = year]
 
@@ -172,6 +178,10 @@ tra = melt(tra[, .(persid_1826, persid_1828, linkid)],
 tra[, year := as.numeric(gsub("persid_", "", year))]
 out = tra[out, on = c("persid", "year")]
 rein = copy(out)
+
+if (any(sapply(rein, function(x) any(x == "")), na.rm = TRUE)){
+    warning('values coded as ""')
+}
 
 saveRDS(rein, "data_raw/opgaafrollen.rds.gz")
 save(rein, file = "data/rein.rda", version = 2)
