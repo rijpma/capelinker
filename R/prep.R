@@ -166,7 +166,11 @@ preflight = function(dat,
     cat('Accented letters and non-alphabetic symbols\n')
     print(
         lapply(dat[, .SD, .SDcols = vrbs_present], function(column){
-            unique(c(stringi::stri_extract_all_regex(column, "[^A-z ]", simplify = TRUE, omit_no_match = TRUE)))
+            stringi::stri_flatten(
+                unique(
+                    c(stringi::stri_extract_all_regex(column, "[^A-z ]", simplify = TRUE, omit_no_match = TRUE))
+                ),
+            na_empty = TRUE)
         })
     )
     cat("\n\n")
