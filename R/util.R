@@ -61,20 +61,20 @@ split_prefixes = function(strings, more_prefixes = c()){
 
     to_remove = c(
         "AN",
-        "DA"
+        "DA",
         "DE LA",
         "DE",
-        "DER"
-        "DIE"
+        "DER",
+        "DIE",
         "DU",
         "LA",
         "LE",
         "OVER",
         "PU",
-        "TE"
-        "TEN"
+        "TE",
+        "TEN",
         "TER",
-        "V D"
+        "V D",
         "VAN DE",
         "VAN DEN",
         "VAN DER",
