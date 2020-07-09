@@ -60,9 +60,33 @@ expand_index = function(dat){
 split_prefixes = function(strings, more_prefixes = c()){
 
     to_remove = c(
-        "VNA DEN", "VEN", "OVER", "VAND DER", "AN", "DE LA", "VANN DER", 
-        "VON", "TER", "VAN DE", "LA", "LE", "DE", "DU", "VAN DER", 
-        "VAN", "VAN[.]", "VD", "PU", "VAN DEN", "VAN DER")
+        "AN",
+        "DA"
+        "DE LA",
+        "DE",
+        "DER"
+        "DIE"
+        "DU",
+        "LA",
+        "LE",
+        "OVER",
+        "PU",
+        "TE"
+        "TEN"
+        "TER",
+        "V D"
+        "VAN DE",
+        "VAN DEN",
+        "VAN DER",
+        "VAN DER",
+        "VAN",
+        "VAN[.]",
+        "VAND DER",
+        "VANN DER",
+        "VD",
+        "VEN",
+        "VNA DEN",
+        "VON")
     to_remove = c(to_remove, more_prefixes)
     to_remove = unique(to_remove)
     to_remove = to_remove[order(-nchar(to_remove))] # longest first to extract those first
