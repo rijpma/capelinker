@@ -68,18 +68,23 @@ label = function(
         character_variables = c("mlast", "mfirst", "wlast", "wfirst"),
         numeric_variables = "settlerchildren")
 
-    persid_from_incnd = paste0(persid_from, "_from")
-    persid_to_incnd = paste0(persid_to, "_to")
+    blockvariable_in_cnd = paste0(blockvariable, "_from")
+    persid_from_in_cnd = paste0(persid_from, "_from")
+    persid_to_in_cnd = paste0(persid_to, "_to")
+
+    cnd = cnd[order(get(blockvariable_in_cnd), get(persid_from_incnd))]
 
     outlist = split(cnd, by = persid_from_incnd)
-    outlist = lapply(outlist, `[`, 
+    outlist = lapply(
+        outlist, 
+        FUN = `[`, 
         i = order(mlastdist, mfirstdist, wfirstdist, wlastdist),
         j = list(
                 persid_from = get(persid_from_incnd), 
                 persid_to = get(persid_to_incnd), 
                 mlast_from, mlast_to, mfirst_from, mfirst_to,
                 wlast_from, wlast_to, wfirst_from, wfirst_to,
-                settlerchildren_from, settlerchildren_to))
-    
+                settlerchildren_from, settlerchildren_to)
+    )
     return(outlist)
 }
