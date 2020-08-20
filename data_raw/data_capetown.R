@@ -62,10 +62,10 @@ cap[, winitials := initials(wfirst)]
 cap[mfirst == "", mfirst := NA]
 cap[wfirst == "", wfirst := NA]
 
-cap[, c("mprefix", "mlast_wo_prefix") := capelinker::split_prefixes(mlast)]
-cap[, c("wprefix", "wlast_wo_prefix") := capelinker::split_prefixes(wlast)]
-cap[grep(" ", mlast_wo_prefix), unique(mlast_wo_prefix)]
-cap[grep(" ", wlast_wo_prefix), unique(wlast_wo_prefix)]
+cap[, c("mprefix", "mlast_woprefix") := capelinker::split_prefixes(mlast)]
+cap[, c("wprefix", "wlast_woprefix") := capelinker::split_prefixes(wlast)]
+cap[grep(" ", mlast_woprefix), unique(mlast_woprefix)]
+cap[grep(" ", wlast_woprefix), unique(wlast_woprefix)]
 # add MR MRS MISS etc?
 
 cap[wlast == "F", wlast := NA] # one of one-letter surname
@@ -98,18 +98,18 @@ names(pretrained_models)
 setdiff(gsub("dist|sdx|_from|_to|_osa", "", pretrained_models$m_boost_stel_rein$variables),
     names(cap))
 
-out = cap[,
+cape = cap[,
     list(persid = persid,
          districtall = NA,
          mlast = mlast,
          mfirst = mfirst,
-         mlast_woprefix = mlast_wo_prefix,
+         mlast_woprefix = mlast_woprefix,
          mprefix = mprefix,
          minitials = minitials,
          wlast = wlast,
          wfirst = wfirst,
          winitials = winitials,
-         wlast_wo_prefix = wlast_wo_prefix,
+         wlast_woprefix = wlast_woprefix,
          wprefix = wprefix,
          spousenamedist = spousenamedist,
          year = year,
@@ -126,10 +126,20 @@ out = cap[,
          settlermen = as.numeric(settlermen),
          settlerwomen = as.numeric(settlerwomen))]
 
-save(out, file = "~/repos/capelinker/data/cape.rda", version = 2)
+save(cape, file = "~/repos/capelinker/data/cape.rda", version = 2)
 
 # so now what?
 # compare with GR and ST
 # check where those were made because they're not in the main repo for sure
 # make candidates?
 # link
+data(cape)
+lbls = label(
+    dat_from = cape[year == 1825 & !is.na(mlast)],
+    dat_to = cape[year == 1824 & !is.na(mlast)],
+    persid_from = "persid",
+    persid_to = "persid",
+    blockvariable = "mlast",
+    N = 500,
+    blocktype = "bigram distance"
+)
