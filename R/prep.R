@@ -134,7 +134,7 @@ preflight = function(dat,
         .SDcols = vrbs_present])
     cat("\n\n")
 
-    cat("Share multiword string variables (models expect joint middle names or joint prefixes)")
+    cat("Share multiword string variables (models expect joint middle names or joint prefixes):\n")
     print(dat[, 
         lapply(.SD, function(x) mean(stringi::stri_count_words(x) > 1, na.rm = TRUE)),
         .SDcols = vrbs_present])
