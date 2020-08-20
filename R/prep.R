@@ -136,7 +136,7 @@ preflight = function(dat,
 
     cat("Share multiword string variables (models expect joint middle names or joint prefixes)")
     print(dat[, 
-        lapply(.SD, function(x) mean(stringi::stri_count_words(x) > 1)),
+        lapply(.SD, function(x) mean(stringi::stri_count_words(x) > 1, na.rm = TRUE)),
         .SDcols = vrbs_present])
     cat("\n\n")
 
