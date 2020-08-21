@@ -101,7 +101,8 @@ opg[grepl("^ *$", firstnamemen), list(firstnamemen, lastnamemen)]
 opg[, minitials := initials(firstnamemen, return_NA_on_empty = FALSE)]
 opg[, winitials := initials(firstnamewomen, return_NA_on_empty = FALSE)]
 
-opg[, wifepresent := !(is.na(firstnamewomen)  & !is.na(lastnamewomen))] # because F & T = F
+# this needs fixing
+opg[, wifepresent := !(is.na(wfirst) & is.na(wlast))]
 opg[, spousenamedist := stringdist::stringdist(lastnamemen, lastnamewomen, method='jw', p=0.1)]
 opg[, wineproducer := as.numeric(vines) > 0 & !is.na(vines)]
 opg[, districtall := ifelse(districtdum == ".", -1, as.numeric(districtdum))]
