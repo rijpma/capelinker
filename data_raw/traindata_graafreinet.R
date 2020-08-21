@@ -20,7 +20,7 @@ library("capelinker")
 opg = data.table::fread('~/dropbox/opgaafrol/fgvf15oct.csv', na.strings = '.')
 
 # the links
-tra = fread("/Users/auke/Dropbox/opgaafrol/matched.csv")
+tra = fread("~/Dropbox/opgaafrol/matched.csv")
 setnames(tra, 10:11, c("persid_1828", "persid_1826"))
 tra = tra[!is.na(persid_1828) & !is.na(persid_1826), ]
 
@@ -102,7 +102,7 @@ opg[, minitials := initials(firstnamemen, return_NA_on_empty = FALSE)]
 opg[, winitials := initials(firstnamewomen, return_NA_on_empty = FALSE)]
 
 # this needs fixing
-opg[, wifepresent := !(is.na(wfirst) & is.na(wlast))]
+opg[, wifepresent := !(is.na(firstnamewomen) & is.na(lastnamewomen))]
 opg[, spousenamedist := stringdist::stringdist(lastnamemen, lastnamewomen, method='jw', p=0.1)]
 opg[, wineproducer := as.numeric(vines) > 0 & !is.na(vines)]
 opg[, districtall := ifelse(districtdum == ".", -1, as.numeric(districtdum))]
@@ -183,6 +183,8 @@ rein = copy(out)
 if (any(sapply(rein, function(x) any(x == "")), na.rm = TRUE)){
     warning('values coded as ""')
 }
+
+capelinker::preflight(rein, modstring = "opgaafrol_full")
 
 saveRDS(rein, "data_raw/opgaafrollen.rds.gz")
 save(rein, file = "data/rein.rda", version = 2)
