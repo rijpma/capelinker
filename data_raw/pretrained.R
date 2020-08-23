@@ -3,12 +3,15 @@ rm(list = ls())
 library("randomForest")
 library("stringdist")
 library("data.table")
-library("devtools")
+# library("devtools")
 library("stringi")
 
 setwd("~/repos/capelinker")
-devtools::document()
-devtools::load_all()
+# devtools::document()
+# devtools::load_all()
+
+remotes::install_github("rijpma/capelinker", dependencies = FALSE)
+library("capelinker")
 
 ## opgaafrollen
 # -------------
@@ -54,7 +57,7 @@ f_sparse = update(f, . ~ .
 
 set.seed(123871)
 share_train = 0.7
-both[, train := persid_from %in% sample(unique(persid_from), ceiling(length(unique(persid_from)) * share_train)]
+both[, train := persid_from %in% sample(unique(persid_from), ceiling(length(unique(persid_from)) * share_train))]
 trn_both = both[train == 1]
 vld_both = both[train == 0]
 
@@ -90,96 +93,8 @@ predictions = data.table(
     correct = vld_both$correct,
     pred_bos = predict(m_boost_stel_rein, newdata = xgbm_ff(vld_both, f)))
 # table(predictions$correct, predictions$pred_bos > 0.5)
-
-
-
-opg = readRDS("~/repos/capelinker/data_raw/opgaafrollen.rds.gz")
-opg[, mfirst_single := stri_extract_first_words(mfirst)]
-opg[!is.na(mfirst_single) & !is.na(year) & !is.na(mlast), mname_uniqueness := stringdist_closest(stri_join(mfirst_single, mlast)), by = year]
-
-cnd = capelinker::candidates(
-    dat_from = opg[year == 1828 & grepl("^[A-L]", mlast), ], # 608
-    dat_to = opg[year==1826 & grepl("^[A-L]", mlast), ],     # 674
-    maxdist = 0.15,
-    blockvariable = "mlast") # mlast regular
-
-cnd[, correct := linkid_from == linkid_to]
-cnd[is.na(correct), correct := FALSE]
-cnd = cnd[!is.na(correct), ]
-
-cnd[, uniqueN(persid_from)] # 570
-cnd[, sum(correct, na.rm = T)] # 441, so we lost 14, but ncnd is 7547
-nrow(cnd) # 7547
-
-cnd = capelinker::distcalc(cnd,
-    character_variables = c("mlast", "mfirst", "wlast", "wfirst", 
-        "mlast_woprefix", "wlast_woprefix", "minitials", "winitials"),
-    numeric_variables = c("settlerchildren"))
-
-cnd[, wifeinboth := (wifepresent_from == TRUE & wifepresent_to == TRUE)]
-# should be upper
-# cnd[, wifeinboth := (wifepresent_from == wifepresent_to)]
-
-cnd[, matches := .N, by = persid_from]
-
-cnd = cnd[, list(correct, wifepresent_from, spousenamedist_from,
-    namefreq_from, wifepresent_to, spousenamedist_to,
-    namefreq_to, mlastdist, mfirstdist,
-    minitialsdist, wlastdist, wfirstdist,
-    winitialsdist, mlastsdx, mfirstsdx,
-    wlastsdx, wfirstsdx,wifeinboth, 
-    mlast_woprefixdist, 
-    wlast_woprefixdist, # including this apparently makes the 
-                          # model rely on it too much and it
-                          # breaks down on wives being absent
-    mname_uniqueness_to, mname_uniqueness_from,
-    settlerchildrendist, matches)]
-
-
-set.seed(2718)
-smpl = rbinom(nrow(cnd), 1, p=0.5)
-# smpl = rbinom(nrow(cnd), 1, p=0.8)
-trn = cnd[smpl == 1, ]
-vld = cnd[smpl == 0, ]
-
-trn = trn[complete.cases(trn), ]
-trn = trn[, lapply(.SD, normalise)]
-vld = vld[, lapply(.SD, normalise), .SDcols = names(trn)]
-
-opgaafrol_full = randomForest(as.factor(correct) ~ 
-    mlastdist + mfirstdist + minitialsdist + 
-    mlastsdx + mfirstsdx + 
-    wlastdist + wfirstdist + winitialsdist + 
-    wlastsdx + wfirstsdx + 
-    wifepresent_from + spousenamedist_from + namefreq_from + 
-    wifepresent_to + spousenamedist_to + namefreq_to + 
-    wifeinboth + settlerchildrendist + matches, data=trn, mty=5)
-
-opgaafrol_full$confusion
-tail(opgaafrol_full$err.rate[, "OOB"], 1)
-sum(opgaafrol_full$confusion[1:2, 1:2]) # 3683
-
-pred_rf_vld = predict(opgaafrol_full, newdata=vld)
-conf_rf_vld = table(actual = vld$correct[as.numeric(names(pred_rf_vld))], predicted = pred_rf_vld)
-conf_rf_vld
-prop.table(conf_rf_vld, margin = 1) # row, share actually true correctly predicted
-prop.table(conf_rf_vld, margin = 2) # col, share predicted actualy true
-
-m_rf_opgaafrol_genealogy = randomForest(
-    as.factor(correct) ~ wifepresent_from + namefreq_from + wifepresent_to + 
-    namefreq_to + mlastdist + mfirstdist + minitialsdist + wlastdist + 
-    wfirstdist + winitialsdist + mlastsdx + mfirstsdx + wlastsdx + 
-    wfirstsdx + 
-    # settlerchildrendist + 
-    # wlast_woprefixdist
-     + matches,
-    data = trn)
-
-m_rf_opgaafrol_sparse = randomForest(
-    as.factor(correct) ~ minitialsdist + mfirstdist + 
-    # wlast_woprefixdist + 
-    winitialsdist + wfirstdist + matches + wifepresent_to, 
-    data = trn)
+# Metrics::precision(predictions$correct, predictions$pred_bos > 0.5)
+# Metrics::recall(predictions$correct, predictions$pred_bos > 0.5)
 
 # baptism and marriage records
 # ----------------------
@@ -277,18 +192,6 @@ pretrained_models = list(
     m_rf_baptisms_full = list(
         model = m_rf_baptisms_full,
         variables = all.vars(formula(m_rf_baptisms_full))[-1]
-    ),
-    opgaafrol_full = list(
-        model = opgaafrol_full,
-        variables = all.vars(formula(opgaafrol_full))[-1]
-    ),
-    m_rf_opgaafrol_genealogy = list(
-        model = m_rf_opgaafrol_genealogy,
-        variables = all.vars(formula(m_rf_opgaafrol_genealogy))[-1]
-    ),
-    m_rf_opgaafrol_sparse = list(
-        model = m_rf_opgaafrol_sparse,
-        variables = all.vars(formula(m_rf_opgaafrol_sparse))[-1]
     )
 )
 lapply(pretrained_models, `[[`, "variables")
