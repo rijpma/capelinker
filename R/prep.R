@@ -69,11 +69,11 @@
 #' @import data.table
 #' @export
 preflight = function(dat,
-    modstring = c("m_rf_baptisms_sparse", "m_rf_baptisms_full", "opgaafrol_full")){
+    modstring = c("m_rf_baptisms_sparse", "m_rf_baptisms_full", "m_boost_stel_rein")){
 
     modstring = match.arg(modstring)
 
-    pattern = "dist$|sdx$"
+    pattern = "dist$|dist_osa$|sdx$|gauss$"
 
     data("pretrained_models")
 
@@ -159,7 +159,7 @@ preflight = function(dat,
 
     cat('Share accented letters and non-alphabetic symbols per variable (matching might require consistency):\n')
     print(dat[, 
-        lapply(.SD, function(x) mean(grepl("[^A-z ]", x))), 
+        lapply(.SD, function(x) mean(grepl("[^a-zA-Z ]", x))), 
         .SDcols = vrbs_present])
     cat("\n\n")
     
@@ -168,7 +168,7 @@ preflight = function(dat,
         lapply(dat[, .SD, .SDcols = vrbs_present], function(column){
             stringi::stri_flatten(
                 unique(
-                    c(stringi::stri_extract_all_regex(column, "[^A-z ]", simplify = TRUE, omit_no_match = TRUE))
+                    c(stringi::stri_extract_all_regex(column, "[^a-zA-Z ]", simplify = TRUE, omit_no_match = TRUE))
                 ),
             na_empty = TRUE)
         })
