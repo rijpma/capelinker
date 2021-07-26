@@ -1,14 +1,10 @@
 rm(list = ls())
 
 library("randomForest")
-library("stringdist")
+library("xgboost")
 library("data.table")
-# library("devtools")
-library("stringi")
 
 setwd("~/repos/capelinker")
-# devtools::document()
-# devtools::load_all()
 
 # remotes::install_github("rijpma/capelinker", dependencies = FALSE)
 library("capelinker")
