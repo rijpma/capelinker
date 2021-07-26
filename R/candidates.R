@@ -15,8 +15,8 @@
 #' @param dat_to a data.table
 #' @param idvariable_from String giving the identifier variable in dat_from.
 #' @param idvariable_to String giving the identifier variable in dat_from.
-#' @param blockvariable String giving the name of the blocking varariable. Distance between this variable in both datasets determines whether a pair of records is a candidate. Should be present in both datasets. Defaults to "mlast", the male surname.
-#' @param blocktype Type of blocking: string distance (default) or numeric.
+#' @param blockvariable_from String giving the name of the blocking varariable. Distance between this variable in both datasets determines whether a pair of records is a candidate. Should be present in both datasets. Defaults to "mlast", the male surname.
+#' @param blocktype_to Type of blocking: string distance (default) or numeric.
 #' @param linktype Should there be no more than one record in each dataset that can be linked (one:one), or is it possible for multiple records in \code{dat_from} to be linked to \code{dat_to}? Defaults to "one:one".
 #' @param maxdist Maximum distance (0-1) to consider a record a candidate. Defaults to 0.15 for male surname string distance. If using numeric distance (for instance year of birth), very different values could be needed.
 #' 
@@ -30,8 +30,10 @@
 #'  
 #' @export
 candidates = function(dat_from, dat_to, 
-    blockvariable = "mlast", 
-    idvariable_from = "persid", idvariable_to = "persid",
+    blockvariable_from = "mlast", 
+    blockvariable_to = "mlast", 
+    idvariable_from = "persid", 
+    idvariable_to = "persid",
     blocktype = c("string distance", 
                  "numeric", 
                  "bigram distance", 
@@ -62,8 +64,8 @@ candidates = function(dat_from, dat_to,
 
     if (blocktype == "string distance"){
         distmat = stringdist::stringdistmatrix(
-            a = dat_from[, get(blockvariable)],
-            b = dat_to[, get(blockvariable)],
+            a = dat_from[, get(blockvariable_from)],
+            b = dat_to[, get(blockvariable_to)],
             method = 'jw', p = 0.1)
         candidate_list = apply(distmat, 1, function(x) which(x < maxdist))
         score_list =distmat[rep(1:length(candidate_list), sapply(candidate_list, length)) + nrow(distmat) * (unlist(candidate_list) - 1)]
@@ -71,29 +73,30 @@ candidates = function(dat_from, dat_to,
     }
     if (blocktype == "numeric"){
         simmat = 1 - outer(
-            X = dat_from[, get(blockvariable)],
-            Y = dat_to[, get(blockvariable)],
+            X = dat_from[, get(blockvariable_from)],
+            Y = dat_to[, get(blockvariable_to)],
             FUN = capelinker::gk)
         candidate_list = apply(simmat, 1, function(x) which(x > maxsim))
         score_list = apply(simmat, 1, function(x) x[which(x > maxsim)])
     }
     if (blocktype == "bigram distance"){
         simmat = qlcMatrix::sim.strings(
-            strings1 = dat_from[, get(blockvariable)],
-            strings2 = dat_to[, get(blockvariable)],
+            strings1 = dat_from[, get(blockvariable_from)],
+            strings2 = dat_to[, get(blockvariable_to)],
             boundary = TRUE,
             left.boundary = "#", right.boundary = "#") # maybe no right boundary?
+        # issue: if nothing similar enough, breaks?
         candidate_list = apply(simmat, 1, function(x) which(x > maxsim))
         score_list = apply(simmat, 1, function(x) x[which(x > maxsim)])
     }
     if (blocktype == "idf bigram distance"){
         s1 = qlcMatrix::splitStrings(
-            strings = dat_from[, get(blockvariable)], 
+            strings = dat_from[, get(blockvariable_from)], 
             simplify = TRUE,
             boundary = TRUE,
             left.boundary = "#", right.boundary = "#")
         s2 = qlcMatrix::splitStrings(
-            strings = dat_to[, get(blockvariable)],
+            strings = dat_to[, get(blockvariable_to)],
             simplify = TRUE,
             boundary = TRUE,
             left.boundary = "#", right.boundary = "#")
@@ -103,8 +106,8 @@ candidates = function(dat_from, dat_to,
         score_list = apply(simmat, 1, function(x) x[which(x > maxsim)])
     }
     if (blocktype == "soundex"){
-        candidate_list = lapply(phonetic(dat_from[[blockvariable]]), 
-            function(x) which(phonetic(dat_to[[blockvariable]]) %in% x))
+        candidate_list = lapply(phonetic(dat_from[[blockvariable_from]]), 
+            function(x) which(phonetic(dat_to[[blockvariable_to]]) %in% x))
     }
 
     tomerge = dat_to[unlist(candidate_list), ]
@@ -116,6 +119,7 @@ candidates = function(dat_from, dat_to,
     # NA. Undesirable, surely? Can never be linked, can only cause mistakes...
     combined = merge(dat_from, tomerge, 
         all = TRUE, 
+        # is this correct? Why not cartesian for many-one?
         allow.cartesian = linktype == "one:one",
         by.x = 'linked_from', by.y = 'linked_to', 
         suffixes = c('_from', '_to'))
