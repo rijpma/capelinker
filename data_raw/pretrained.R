@@ -10,7 +10,7 @@ setwd("~/repos/capelinker")
 # devtools::document()
 # devtools::load_all()
 
-remotes::install_github("rijpma/capelinker", dependencies = FALSE)
+# remotes::install_github("rijpma/capelinker", dependencies = FALSE)
 library("capelinker")
 
 ## opgaafrollen
@@ -196,4 +196,6 @@ pretrained_models = list(
 )
 lapply(pretrained_models, `[[`, "variables")
 
-devtools::use_data(pretrained_models, overwrite = TRUE)
+save(pretrained_models, 
+    file = "data/pretrained_models.rda", 
+    version = 2)
