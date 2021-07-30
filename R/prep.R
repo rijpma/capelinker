@@ -1,4 +1,4 @@
-# todo: make this take a modstring variable
+# todo: let it take variable names in general? but then no check if model variables ready
 
 #' Check whether dataset is ready for linkage
 #' 
@@ -156,6 +156,13 @@ preflight = function(dat,
     print(dat[, lapply(.SD, function(x) mean(stringi::stri_trans_tolower(x) == x & x != "", na.rm = TRUE)), 
         .SDcols = vrbs_present])
     cat("\n\n")
+
+    cat('Share leading and trailing spaces (count towards string distances):\n')
+    print(dat[, 
+        lapply(.SD, function(x) mean(stri_detect_regex(x, "(^\\s+|\\s+$)"), na.rm = TRUE)), 
+        .SDcols = vrbs_present])
+    cat("\n\n")
+
 
     cat('Share accented letters and non-alphabetic symbols per variable (matching might require consistency):\n')
     print(dat[, 
