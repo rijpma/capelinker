@@ -3,6 +3,7 @@ rm(list = ls())
 library("randomForest")
 library("xgboost")
 library("data.table")
+library("stringdist")
 
 setwd("~/repos/capelinker")
 
@@ -88,7 +89,6 @@ predictions = data.table(
     wife = vld_both$wife * 2, # normalised originally
     correct = vld_both$correct,
     pred_bos = predict(m_boost_stel_rein, newdata = xgbm_ff(vld_both, f)))
-# table(predictions$correct, predictions$pred_bos > 0.5)
 # Metrics::precision(predictions$correct, predictions$pred_bos > 0.5)
 # Metrics::recall(predictions$correct, predictions$pred_bos > 0.5)
 
@@ -104,11 +104,11 @@ cnd = capelinker::candidates(
     idvariable_to = "marid",
     linktype = "many:one",
     blocktype = "string distance",
-    blockvariable = "mlast",
+    blockvariable_from = "mlast",
+    blockvariable_to = "mlast",
     maxdist = 0.15)
 
-cnd[is.na(marid)]
-
+# cnd[is.na(marid)]
 # NAs present because merge(..., all = TRUE), meaning NA when no plausible
 # matches were found
 
@@ -173,6 +173,109 @@ m_rf_baptisms_sparse = randomForest(
         with = FALSE],
     na.action = "na.exclude")
 
+## couples in saf
+# ---------------
+jlabels = readxl::read_xlsx("~/data/cape/saf/Jeanne matches_full.xlsx")
+setDT(jlabels)
+alabels = readxl::read_xlsx("~/data/cape/saf/saf_spousallinks_labels_a_done.xlsx")
+setDT(alabels)
+alabels = alabels[match > 0, list(couple_id_from, couple_id_to)]
+
+labelled = rbindlist(list(alabels, jlabels[, -"match"]))
+labelled = unique(labelled)
+
+saf_cnd = fread("~/data/cape/saf/saf_spousallinks_labels.csv", na.strings = "")
+saf_cnd = saf_cnd[!is.na(couple_id_to)]
+
+saf_cnd[paste(couple_id_from, couple_id_to) %in% paste(labelled$couple_id_from, labelled$couple_id_to), match := 1]
+
+# remove duplicate
+saf_cnd = saf_cnd[!(couple_id_from == "snymana1b7c1d2e7_mar_1" & couple_id_to == "snymana1b7c1d7e4_mar_1")]
+# nb now more matches in labelled than in saf_cnd but is ok
+
+setnames(saf_cnd, "match", "correct")
+
+saf_cnd[, mfirstdist := stringdist::stringdist(firstnames_ego_husb, firstnames_spouse_husb, method = "jw")]
+saf_cnd[, mlastdist := stringdist::stringdist(surname_ego_husb, surname_spouse_husb, method = "jw")]
+
+saf_cnd[, wfirstdist := stringdist::stringdist(firstnames_ego_wife, firstnames_spouse_wife, method = "jw")]
+saf_cnd[, wlastdist := stringdist::stringdist(surname_ego_wife, surname_spouse_wife, method = "jw")]
+
+saf_cnd[, minitals_ego_husb := initials(firstnames_ego_husb)]
+saf_cnd[, minitals_spouse_husb := initials(firstnames_spouse_husb)]
+saf_cnd[, minitialsdist_osa := 1 - stringdist::stringsim(minitals_ego_husb, minitals_spouse_husb, method = "osa")]
+
+saf_cnd[, winitals_ego_husb := initials(firstnames_ego_wife)]
+saf_cnd[, winitals_spouse_husb := initials(firstnames_spouse_wife)]
+saf_cnd[, winitialsdist_osa := 1 - stringdist::stringsim(winitals_ego_husb, winitals_spouse_husb, method = "osa")]
+
+saf_cnd[, spousal_age_gap := startyear_ego_husb - startyear_ego_wife]
+saf_cnd[, maryear_initialsdist_osa := 1 - stringdist::stringsim(as.character(married_year_ego_husb), as.character(married_year_ego_wife), method = "osa")]
+
+f_saf = formula(correct ~ 
+    # maryear_initialsdist_osa +  
+    mlastdist + mfirstdist + minitialsdist_osa + 
+    # mlastsdx + 
+    # mfirstsdx + 
+    wlastdist + wfirstdist + winitialsdist_osa
+    # wlastsdx + 
+    # wfirstsdx + 
+    # namefreq_from + 
+    # spousenamedist_from + 
+    # namefreq_to + 
+    # spousenamedist_to + 
+    # wifepresent_from + 
+    # wifepresent_to + 
+    # wifeinboth + 
+    # settlerchildrengauss + 
+    # nextmfirst + 
+    # mfirst_uniqueness_to +
+    # mfirst_uniqueness_from +
+    # matches + 
+    # husb_wife_surnamedist + 
+    # region1
+    # implied_marriage_age_wife + 
+    # implied_marriage_age_husb +
+    # spousal_age_gap +
+    # myeardiff
+)
+
+set.seed(987)
+share_train = 0.7
+saf_cnd[, train := couple_id_from %in% sample(unique(couple_id_from), ceiling(length(unique(couple_id_from)) * share_train))]
+trn_saf = saf_cnd[train == 1]
+vld_saf = saf_cnd[train == 0]
+
+# some overfitting going on her
+m_boost_saf = xgboost::xgb.train(
+    data = capelinker::xgbm_ff(trn_saf, f_saf),
+    nrounds = 1000,
+    # watchlist = list(train = xgbm_ff(trn_saf, f), eval = xgbm_ff(vld_saf, f)),
+    params = list(
+        max_depth = 6,        # default 6
+        min_child_weight = 1, # default 1 larger is more consevative
+        gamma = 1,            # default 0, larger is more conservative
+        eta = 0.3,            # default 0.3 lower for less overfitting
+        max_delta_step = 0,   # deafult 0, useful for unbalanced, higher is more conservative
+        subsample = 0.8,        # default 1 lower is less overfitting
+        colsample_bytree = 0.5, # default 1 
+        objective = "binary:logistic"
+))
+
+impmat = xgboost::xgb.importance(model = m)
+
+predictions = data.table(
+    correct = as.logical(vld_saf$correct),
+    pred_bos = predict(m_boost_saf, newdata = xgbm_ff(vld_saf, f_saf)))
+conf = table(actual = predictions$correct, predicted = predictions$pred_bos > 0.5)
+print(xtable(conf), 
+    add.to.row = list(pos=list(-1), command=c("& \\multicolumn{3}{c}{Predicted}\\\\")))
+
+predictions[, .N, by = list(actual = correct, predicted = pred_bos > 0.5)]
+
+Metrics::precision(predictions$correct, predictions$pred_bos > 0.5)
+Metrics::recall(predictions$correct, predictions$pred_bos > 0.5)
+
 
 pretrained_models = list(
     m_boost_stel_rein = list(
@@ -183,12 +286,13 @@ pretrained_models = list(
         variables = all.vars(f_sparse)[-1]),
     m_rf_baptisms_sparse = list(
         model = m_rf_baptisms_sparse,
-        variables = all.vars(formula(m_rf_baptisms_sparse))[-1]
-    ),
+        variables = all.vars(formula(m_rf_baptisms_sparse))[-1]),
     m_rf_baptisms_full = list(
         model = m_rf_baptisms_full,
-        variables = all.vars(formula(m_rf_baptisms_full))[-1]
-    )
+        variables = all.vars(formula(m_rf_baptisms_full))[-1]),
+    m_boost_saf = list(
+        model = m_boost_saf,
+        variables = all.vars(f_saf)[-1])
 )
 lapply(pretrained_models, `[[`, "variables")
 
