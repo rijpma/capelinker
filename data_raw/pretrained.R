@@ -262,7 +262,7 @@ m_boost_saf = xgboost::xgb.train(
         objective = "binary:logistic"
 ))
 
-impmat = xgboost::xgb.importance(model = m)
+impmat = xgboost::xgb.importance(model = m_boost_saf)
 
 predictions = data.table(
     correct = as.logical(vld_saf$correct),
@@ -275,6 +275,25 @@ predictions[, .N, by = list(actual = correct, predicted = pred_bos > 0.5)]
 
 Metrics::precision(predictions$correct, predictions$pred_bos > 0.5)
 Metrics::recall(predictions$correct, predictions$pred_bos > 0.5)
+Metrics::fbeta_score(predictions$correct, predictions$pred_bos > 0.5)
+
+toplot = predictions[, .N, by = list(actual = correct, predicted = pred_bos > 0.5)]
+steps = seq(0.01, 1, 0.01)
+toplot = predictions[, list(
+        prec = sapply(steps, function(x) Metrics::precision(correct, predicted = pred_bos > x)),
+        rec = sapply(steps, function(x) Metrics::recall(correct, predicted = pred_bos > x)),
+        fbeta = sapply(steps, function(x) Metrics::fbeta_score(correct, predicted = pred_bos > x)),
+        tr = steps)]
+pdf("~/repos/saf/precrec.pdf")
+plot(rec ~ prec, data = toplot, type = 'b', pch = 19,
+    xlab = "precision", ylab = "recal")
+points(rec ~ prec, data = toplot[tr == 0.5], type = 'b', col = 2, pch = 19)
+dev.off()
+
+library(ggplot2)
+ggplot(toplot, aes(prec, rec)) + 
+    geom_line() + 
+    geom_point(data = toplot[tr == 0.5], col = "black")
 
 
 pretrained_models = list(
