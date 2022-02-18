@@ -379,8 +379,8 @@ len_longest_string = function(str){
     return(unlist(out))
 } 
 
-saf2opg[, wfirst_is_initials:= len_longest_string(wfirst) == 1]
-saf2opg[, mfirst_is_initials:= len_longest_string(mfirst) == 1]
+saf2opg[, wfirst_is_initials := as.numeric(len_longest_string(wfirst) == 1)]
+saf2opg[, mfirst_is_initials := as.numeric(len_longest_string(mfirst) == 1)]
 
 saf2opg[, years_married := year - married_year]
 # saf_cnd[, maryear_initialsdist_osa := 1 - stringdist::stringsim(as.character(married_year_ego_husb), as.character(married_year_ego_wife), method = "osa")]
