@@ -288,3 +288,18 @@ xgbm_ff = function(dat, f, labelled = TRUE){
         xgboost::xgb.DMatrix(data = mm)
     }
 }
+
+#' character length of a the longest word in a string
+#' 
+#' \code{len_longest_word} calculates the character length of a the longest
+#'  word in a string. 
+#' 
+#' @param str character vector to search in
+#' 
+#' @export
+len_longest_word = function(str){
+    out = stringi::stri_extract_all_regex(str, "[A-Za-z]+", simplify = FALSE)
+    out = lapply(out, nchar)
+    out = lapply(out, max)
+    return(unlist(out))
+} 

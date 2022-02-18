@@ -372,15 +372,10 @@ saf2opg[, winitialsdist_osa := 1 - stringdist::stringsim(winitals_saf, winitals_
 saf2opg[, cross_surnamedist := stringdist::stringdist(firstnames, wlast, method = "jw")]
 
 # add "name is initials"
-len_longest_string = function(str){
-    out = stringi::stri_extract_all_regex(str, "[a-z]+", simplify = FALSE)
-    out = lapply(out, nchar)
-    out = lapply(out, max)
-    return(unlist(out))
-} 
 
-saf2opg[, wfirst_is_initials := as.numeric(len_longest_string(wfirst) == 1)]
-saf2opg[, mfirst_is_initials := as.numeric(len_longest_string(mfirst) == 1)]
+
+saf2opg[, wfirst_is_initials := as.numeric(len_longest_word(wfirst) == 1)]
+saf2opg[, mfirst_is_initials := as.numeric(len_longest_word(mfirst) == 1)]
 
 saf2opg[, years_married := year - married_year]
 # saf_cnd[, maryear_initialsdist_osa := 1 - stringdist::stringsim(as.character(married_year_ego_husb), as.character(married_year_ego_wife), method = "osa")]
