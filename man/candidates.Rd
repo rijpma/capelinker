@@ -4,28 +4,35 @@
 \alias{candidates}
 \title{Create candidate links from two datasets.}
 \usage{
-candidates(dat_from, dat_to, blockvariable = "mlast",
-  idvariable_from = "persid", idvariable_to = "persid",
-  blocktype = c("string distance", "numeric", "bigram distance",
-  "idf bigram distance", "soundex"), linktype = c("one:one", "many:one"),
-  maxdist = 0.15)
+candidates(
+  dat_from,
+  dat_to,
+  blockvariable_from = "mlast",
+  blockvariable_to = "mlast",
+  idvariable_from = "persid",
+  idvariable_to = "persid",
+  blocktype = c("string distance", "numeric", "bigram distance", "idf bigram distance",
+    "soundex"),
+  linktype = c("one:one", "many:one"),
+  maxdist = 0.15
+)
 }
 \arguments{
 \item{dat_from}{a data.table}
 
 \item{dat_to}{a data.table}
 
-\item{blockvariable}{String giving the name of the blocking varariable. Distance between this variable in both datasets determines whether a pair of records is a candidate. Should be present in both datasets. Defaults to "mlast", the male surname.}
+\item{blockvariable_from}{String giving the name of the blocking varariable. Distance between this variable in both datasets determines whether a pair of records is a candidate. Should be present in both datasets. Defaults to "mlast", the male surname.}
 
 \item{idvariable_from}{String giving the identifier variable in dat_from.}
 
 \item{idvariable_to}{String giving the identifier variable in dat_from.}
 
-\item{blocktype}{Type of blocking: string distance (default) or numeric.}
-
 \item{linktype}{Should there be no more than one record in each dataset that can be linked (one:one), or is it possible for multiple records in \code{dat_from} to be linked to \code{dat_to}? Defaults to "one:one".}
 
 \item{maxdist}{Maximum distance (0-1) to consider a record a candidate. Defaults to 0.15 for male surname string distance. If using numeric distance (for instance year of birth), very different values could be needed.}
+
+\item{blocktype_to}{Type of blocking: string distance (default) or numeric.}
 }
 \value{
 A dataset containing all candidate pairs, and all columns in dat_from and dat_to. Columns with the same name will get a suffix "_from" or "_to".
@@ -36,7 +43,7 @@ A dataset containing all candidate pairs, and all columns in dat_from and dat_to
 \details{
 Blocking on multiple variables is currently not supported, but could be done by using \code{candidates()} repeatedly and merging the results might work.
 
-Because historical records often provide limited information, it is possible to block on string distances. Note that this can become quite slow when there is a large number of records to in each dataset (say, tens of thousands).
+Because historical records often provide limited information, it is possible to block on string distances. Note that this can become quite slow when there is a large number of records to in each dataset (say, tens of thousands). 
 
 String distance blocking is done using Jaro-Winkler string distances, which de-emphasise differences at the end of the string. The distance ranging from 0 (perfect match) to 1 (completely mismatch). Set the maxdist (see Arguments) accordingly.
 

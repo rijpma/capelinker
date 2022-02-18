@@ -1,8 +1,8 @@
 Package: capelinker
 Title: Machine Learning-based Record Linkage for Historical South Africa
-Version: 0.0.1
+Version: 0.0.2
 Authors@R: person("First", "Last", email = "first.last@example.com", role = c("aut", "cre"))
-Description: Provides utility function and pretrained models to link 
+Description: Provides utility function and pretrained models to link historical records
 Depends: R (>= 3.4.1)
 License: What license is it under?
 Encoding: UTF-8
@@ -14,5 +14,5 @@ Imports:
     xgboost (>= 0.71.1),
     qlcMatrix (>= 0.9.7)
 LazyData: true
-RoxygenNote: 6.1.1
+RoxygenNote: 7.1.2
 Suggests: testthat

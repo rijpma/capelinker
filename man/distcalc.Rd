@@ -4,8 +4,12 @@
 \alias{distcalc}
 \title{Calculate distances between character and numeric variables}
 \usage{
-distcalc(dat, character_variables = c("mlast", "mfirst", "wfirst",
-  "minitials", "winitials", "mprof"), numeric_variables = c("year"))
+distcalc(
+  dat,
+  character_variables = c("mlast", "mfirst", "wfirst", "minitials", "winitials",
+    "mprof"),
+  numeric_variables = c("year")
+)
 }
 \arguments{
 \item{dat}{a dataset. \code{distcalc} expects this dataset 

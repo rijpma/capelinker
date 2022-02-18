@@ -4,8 +4,10 @@
 \alias{preflight}
 \title{Check whether dataset is ready for linkage}
 \usage{
-preflight(dat, modstring = c("m_rf_baptisms_sparse",
-  "m_rf_baptisms_full", "opgaafrol_full"))
+preflight(
+  dat,
+  modstring = c("m_rf_baptisms_sparse", "m_rf_baptisms_full", "m_boost_stel_rein")
+)
 }
 \arguments{
 \item{dat}{the dataset to check, as a data.table.}
@@ -62,6 +64,7 @@ For the opgaafrollen.
  \item \code{namefreq}
  \item \code{settlerchildrendist}
 }
+
 
 The following models can be used 
 \itemize{

@@ -4,11 +4,15 @@
 \alias{predict_links}
 \title{Predict links}
 \usage{
-predict_links(dat_candidates, id_from, id_to, group_id = NULL,
-  minimum_confidence = 0.5, modstring = c("m_rf_baptisms_full",
-  "m_rf_baptisms_sparse"), linktype = c("one:one", "many:one"),
-  some_measure_of_other_close_matches = "not_implemented",
-  impute = FALSE)
+predict_links(
+  dat_candidates,
+  id_from,
+  id_to,
+  minimum_confidence = 0.5,
+  modstring = c("m_rf_baptisms_full", "m_rf_baptisms_sparse"),
+  linktype = c("one:one", "many:one"),
+  some_measure_of_other_close_matches = "not_implemented"
+)
 }
 \arguments{
 \item{id_from}{string giving the identifier variable in the candidates dataset for the observations from the \code{_from} dataset.}
