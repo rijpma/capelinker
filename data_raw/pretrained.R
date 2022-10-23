@@ -60,8 +60,8 @@ vld_both = both[train == 0]
 
 m_boost_stel_rein = xgboost::xgb.train(
     data = capelinker::xgbm_ff(trn_both, f),
-    nrounds = 1000,
-    # watchlist = list(train = xgbm_ff(trn_both, f), eval = xgbm_ff(vld_both, f)),
+    nrounds = 500,
+    watchlist = list(train = xgbm_ff(trn_both, f), eval = xgbm_ff(vld_both, f)),
     params = list(
         max_depth = 6,        # default 6
         min_child_weight = 1, # default 1
@@ -89,8 +89,15 @@ predictions = data.table(
     wife = vld_both$wife * 2, # normalised originally
     correct = vld_both$correct,
     pred_bos = predict(m_boost_stel_rein, newdata = xgbm_ff(vld_both, f)))
-# Metrics::precision(predictions$correct, predictions$pred_bos > 0.5)
-# Metrics::recall(predictions$correct, predictions$pred_bos > 0.5)
+Metrics::precision(predictions$correct, predictions$pred_bos > 0.5)
+Metrics::recall(predictions$correct, predictions$pred_bos > 0.5)
+
+table(predictions$correct, predictions$pred_bos > 0.5)
+table(trn_both$correct, predict(m_boost_stel_rein, newdata = xgbm_ff(trn_both, f)) > 0.5)
+
+predictions[, Metrics::precision(correct, pred_bos > 0.5), by = wife]
+predictions[, Metrics::recall(correct, pred_bos > 0.5), by = wife]
+predictions[, Metrics::fbeta_score(correct, pred_bos > 0.5), by = wife]
 
 # baptism and marriage records
 # ----------------------
@@ -217,7 +224,7 @@ f_saf = formula(correct ~
     mlastdist + mfirstdist + minitialsdist_osa + 
     # mlastsdx + 
     # mfirstsdx + 
-    wlastdist + wfirstdist + winitialsdist_osa
+    wlastdist + wfirstdist + winitialsdist_osa +
     # wlastsdx + 
     # wfirstsdx + 
     # namefreq_from + 
@@ -234,8 +241,8 @@ f_saf = formula(correct ~
     # matches + 
     # husb_wife_surnamedist + 
     # region1
-    # implied_marriage_age_wife + 
-    # implied_marriage_age_husb +
+    implied_marriage_age_wife + 
+    implied_marriage_age_husb
     # spousal_age_gap +
     # myeardiff
 )
@@ -371,9 +378,9 @@ saf2opg[, winitialsdist_osa := 1 - stringdist::stringsim(winitals_saf, winitals_
 # add surnamedist
 saf2opg[, cross_surnamedist := stringdist::stringdist(firstnames, wlast, method = "jw")]
 
+# add firstnames count
+
 # add "name is initials"
-
-
 saf2opg[, wfirst_is_initials := as.numeric(len_longest_word(wfirst) == 1)]
 saf2opg[, mfirst_is_initials := as.numeric(len_longest_word(mfirst) == 1)]
 
