@@ -216,6 +216,9 @@ saf_cnd[, winitals_ego_husb := initials(firstnames_ego_wife)]
 saf_cnd[, winitals_spouse_husb := initials(firstnames_spouse_wife)]
 saf_cnd[, winitialsdist_osa := 1 - stringdist::stringsim(winitals_ego_husb, winitals_spouse_husb, method = "osa")]
 
+saf_cnd[, implied_marriage_age_wife := as.numeric(married_year_ego_wife) - as.numeric(startyear_ego_wife)]
+saf_cnd[, implied_marriage_age_husb := as.numeric(married_year_ego_husb) - as.numeric(startyear_ego_husb)]
+
 saf_cnd[, spousal_age_gap := startyear_ego_husb - startyear_ego_wife]
 saf_cnd[, maryear_initialsdist_osa := 1 - stringdist::stringsim(as.character(married_year_ego_husb), as.character(married_year_ego_wife), method = "osa")]
 
@@ -257,7 +260,7 @@ vld_saf = saf_cnd[train == 0]
 m_boost_saf = xgboost::xgb.train(
     data = capelinker::xgbm_ff(trn_saf, f_saf),
     nrounds = 1000,
-    # watchlist = list(train = xgbm_ff(trn_saf, f), eval = xgbm_ff(vld_saf, f)),
+    # watchlist = list(train = xgbm_ff(trn_saf, f_saf), eval = xgbm_ff(vld_saf, f_saf)),
     params = list(
         max_depth = 6,        # default 6
         min_child_weight = 1, # default 1 larger is more consevative
