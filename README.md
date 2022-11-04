@@ -3,16 +3,12 @@
 `capelinker` provides functions and a number of pretrained models to link families and individuals in historical South Africa.
 
 ## Installation
+Capelinker is not on CRAN and needs to be installed from GitHub. The `remotes` package makes this easy.
+
 ```
+install.packages("remotes") # if not installed already
 library("remotes")
-install_github("rijpma/capelinker")
-```
-
-or
-
-```
-library("devtools")
-install_github("rijpma/capelinker")
+remotes::install_github("rijpma/capelinker")
 ```
 
 ## Usage
