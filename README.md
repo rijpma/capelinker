@@ -1,6 +1,6 @@
 # capelinker
 
-`capelinker` provides functions and a number of pretrained models to link families and individuals in historical South Africa.
+`capelinker` is an R library providing functions and a number of pretrained models to link families and individuals in historical South Africa.
 
 ## Installation
 Capelinker is not on CRAN and needs to be installed from GitHub. The `remotes` package makes this easy.
