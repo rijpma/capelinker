@@ -69,28 +69,23 @@
 #' @import data.table
 #' @export
 preflight = function(dat,
-    modstring = c("m_rf_baptisms_sparse", "m_rf_baptisms_full", "m_boost_stel_rein")){
+    character_variables = c("mlast", "mfirst", "wlast", "wfirst"),
+    numeric_variales = NULL,
+    modstring = c("m_boost_stel_rein", "m_rf_baptisms_sparse", "m_rf_baptisms_full")){
 
     modstring = match.arg(modstring)
 
     pattern = "dist$|dist_osa$|sdx$|gauss$"
 
-    data("pretrained_models")
+    data("pretrained_models", package = "capelinker")
 
     vrbs = pretrained_models[[modstring]]$variables
     vrbs = gsub(pattern, "", vrbs[grepl(pattern, vrbs)])
 
-    # vrblist = list(
-    #     m_rf_baptisms_sparse = c("mlast", "mfirst", "wfirst", "year"),
-    #     m_rf_baptisms_full = c("mlast", "mfirst", "wfirst", "winitials", "minitials", "mprof", "year"),
-    #     opgaafrol_full = c("mlast", "mfirst", "wfirst", "wlast", "winitials", "minitials", "settlerchildren")
-    # )
-    # vrbs = vrblist[[modstring]]
-
-
     vrbs_missing = setdiff(vrbs, names(dat))
 
-    cat("Missing for ", modstring, ": \n",vrbs_missing, 
+    cat("Missing for ", modstring, ": \n",
+        vrbs_missing, 
         "\n--------------\n")
 
     vrbs_present = setdiff(vrbs, vrbs_missing)
@@ -148,7 +143,7 @@ preflight = function(dat,
     cat("\n\n")
 
     cat('Share UPPER CASE (matching requires consistency in case between datasets):\n')
-    print(dat[, lapply(.SD, function(x) mean(stringi::stri_trans_toupper(x) == x, na.rm = TRUE)), 
+    print(dat[, lapply(.SD, function(x) mean(stringi::stri_trans_toupper(x) == x & x != "", na.rm = TRUE)), 
         .SDcols = vrbs_present])
     cat("\n\n")
 
@@ -159,7 +154,7 @@ preflight = function(dat,
 
     cat('Share leading and trailing spaces (count towards string distances):\n')
     print(dat[, 
-        lapply(.SD, function(x) mean(stri_detect_regex(x, "(^\\s+|\\s+$)"), na.rm = TRUE)), 
+        lapply(.SD, function(x) mean(stringi::stri_detect_regex(x, "(^\\s+|\\s+$)"), na.rm = TRUE)), 
         .SDcols = vrbs_present])
     cat("\n\n")
 
@@ -187,8 +182,4 @@ preflight = function(dat,
         lapply(.SD, range, na.rm = TRUE), 
         .SDcols = vrbs_present])
     cat("\n\n")
-
-
-
-        # mfirst has middle names?
 }
