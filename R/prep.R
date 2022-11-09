@@ -165,6 +165,19 @@ preflight = function(dat,
         .SDcols = vrbs_present])
     cat("\n\n")
     
+    # this makes it very slow
+    cat('Character set\n')
+    print(
+        lapply(dat[, .SD, .SDcols = vrbs_present], function(column){
+            stringi::stri_flatten(
+                sort(unique(
+                        c(stringi::stri_extract_all_regex(column, ".", simplify = TRUE, omit_no_match = TRUE))
+                )),
+            na_empty = TRUE)
+        })
+    )
+    cat("\n\n")
+
     cat('Accented letters and non-alphabetic symbols\n')
     print(
         lapply(dat[, .SD, .SDcols = vrbs_present], function(column){
