@@ -11,7 +11,7 @@ candidates(
   blockvariable_to = "mlast",
   idvariable_from = "persid",
   idvariable_to = "persid",
-  blocktype = c("string distance", "numeric", "bigram distance", "idf bigram distance",
+  blocktype = c("bigram distance", "string distance", "numeric", "idf bigram distance",
     "soundex"),
   linktype = c("one:one", "many:one"),
   maxdist = 0.15

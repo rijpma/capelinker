@@ -6,8 +6,7 @@
 \usage{
 distcalc(
   dat,
-  character_variables = c("mlast", "mfirst", "wfirst", "minitials", "winitials",
-    "mprof"),
+  character_variables = c("mlast", "mfirst", "wfirst", "minitials", "winitials", "mprof"),
   numeric_variables = c("year")
 )
 }
