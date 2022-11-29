@@ -14,5 +14,5 @@ Imports:
     xgboost (>= 0.71.1),
     qlcMatrix (>= 0.9.7)
 LazyData: true
-RoxygenNote: 7.1.2
+RoxygenNote: 7.2.2
 Suggests: testthat

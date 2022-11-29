@@ -6,9 +6,9 @@
 #' 
 #' Preflight does a number of checks on the dataset.
 #' \itemize{
-#'      \item Whether the required variables are present and correctly named.
-#'      \item Whether the variables are of the correct type.
-#'      \item The share of missing observations by variable (these cannot be matched)
+#'      \item The type of the variables
+#'      \item The share of missing observations by variable, and whether they
+#'          are coded as missing values or empty strings
 #'      \item The share of length one observations by variable (these might break linkage)
 #'      \item The share of case (lower, upper, title) by variable. \code{capelinker} 
 #'          currently does not automatically convert to a single case, but leaves this 
@@ -18,14 +18,17 @@
 #'          Note that some analphabetics (for instance "." or "-") could be frequently 
 #'          and consistently applied in the data. String distance calculation does not 
 #'          fail on accented letters, but it does count towards the string distance.
+#'      \item Whether the variables required for one of the pretrained models
+#'          in capelinker are present and correctly named. }
+#' 
+#' Capelinker also checks the dataset for the requirements of a number of pretrainined models in the capelinker package. The following models are available: 
+#' \itemize{
+#'  \item \code{m_boost_stel_rein} a model linking households from one year to the next in the opgaafrollen.
+#'  \item \code{m_rf_baptisms_sparse} a model linking parents in baptism records to marriage records, based on minimal information: male surname (mlast), male first name (mfirst), female first name (wfirst, female surname not used because it would typically not be reported in the baptism records), and year of marriage/baptism (year).
+#'  \item \code{m_rf_baptisms_full} a model linking parents in baptism and marriage records, using additional information: initials, profession, and soundex distances of the names. Performance is not much better than the sparse model.
 #' }
 #' 
-#' Currently, capelinker expects the dataset to be about couples. That is, data about 
-#' husband and spouse is used for linkage because together they contain far more 
-#' information than a single individual. The pretrained data is done on marriage and the 
-#' parents baptism registries.
-#' 
-#' The following variables are expected by the functions and models:
+#' The following variables are expected by all these models:
 #' \itemize{
 #'      \item \code{mlast} the male surname.
 #'      \item \code{mfirst} the male first name.
@@ -36,29 +39,20 @@
 #'      \item \code{year} the year of observation of the two records
 #' }
 #' 
-#' For the baptisms
+#' The baptism record models also expect and check:
 #' \itemize{
 #'  \item \code{mprof} the male profession
 #' }
 #' 
-#' For the opgaafrollen.
+#' The opgaafrollen model also expects and checks:
 #' \itemize{
-#'  \item \code{wifepresent}
-#'  \item \code{wifeinboth}
-#'  \item \code{spousenamedist}
-#'  \item \code{namefreq}
-#'  \item \code{settlerchildrendist}
-#' }
-#' 
-#' 
-#' The following models can be used 
-#' \itemize{
-#'  \item \code{m_rf_baptisms_sparse} a model linking parents in baptism records to marriage records, based on minimal information: male surname (mlast), male first name (mfirst), female first name (wfirst, female surname not used because it would typically not be reported in the baptism records), and year of marriage/baptism (year).
-#'  \item \code{m_rf_baptisms_full} a model linking parents in baptism and marriage records, using additional information: initials, profession, and soundex distances of the names. Performance is not much better than the sparse model.
-#'  \item \code{opgaafrol_full} a model linking households from one year to the next
-#' }
+#'  \item \code{settlerchildren}
+#' } 
 #' 
 #' @param dat the dataset to check, as a data.table.
+#' @param character_variables the names of the character variables to check, defaults to the male and female first name and surname using the feature names from the pretrained models.
+#' @param numeric_variables the names of the numeric variables to check.
+#' @param modstring the name of the pretrained model to check against
 #' 
 #' @return Text to the console showing the results of the tests.
 #' 
