@@ -11,17 +11,17 @@
 #' It is currently possible to return missing values when for a given record, no candidate is found. While these records can never be matched, they are left in to make comparisons of the dataset easier.
 #' 
 #' 
-#' @param dat_from a data.table
-#' @param dat_to a data.table
+#' @param dat_from The "from" dataset, should be a data.table
+#' @param dat_to The "from" dataset, should be a data.table
+#' @param blockvariable_from String giving the name of the blocking variable in the "from" data. Distance between this variable in both datasets determines whether a pair of records is a candidate. Defaults to "mlast", the male surname in the opgaafrollen data.
+#' @param blockvariable_to String giving the name of the blocking variable in the "to" data. Distance between this variable in both datasets determines whether a pair of records is a candidate. Defaults to "mlast", the male surname in the opgaafrollen data.
 #' @param idvariable_from String giving the identifier variable in dat_from.
 #' @param idvariable_to String giving the identifier variable in dat_from.
-#' @param blockvariable_from String giving the name of the blocking varariable. Distance between this variable in both datasets determines whether a pair of records is a candidate. Should be present in both datasets. Defaults to "mlast", the male surname.
-#' @param blocktype_to Type of blocking: string distance (default) or numeric.
-#' @param linktype Should there be no more than one record in each dataset that can be linked (one:one), or is it possible for multiple records in \code{dat_from} to be linked to \code{dat_to}? Defaults to "one:one".
+#' @param blocktype Type of blocking: bigram distance (default), string distance or numeric.
+#' @param linktype Should there be no more than one record in each dataset that can be linked (one:one), or is it possible for multiple records in \code{dat_from} to be linked to \code{dat_to} (many:one)? Defaults to "one:one".
 #' @param maxdist Maximum distance (0-1) to consider a record a candidate. Defaults to 0.15 for male surname string distance. If using numeric distance (for instance year of birth), very different values could be needed.
 #' 
 #' @return A dataset containing all candidate pairs, and all columns in dat_from and dat_to. Columns with the same name will get a suffix "_from" or "_to".
-#' 
 #' 
 #' @examples
 #' d1 = data.table::data.table(mlast = c("jong", "smid", "nauda"), persid = c(1:3))
@@ -34,9 +34,9 @@ candidates = function(dat_from, dat_to,
     blockvariable_to = "mlast", 
     idvariable_from = "persid", 
     idvariable_to = "persid",
-    blocktype = c("string distance", 
+    blocktype = c("bigram distance", 
+                 "string distance", 
                  "numeric", 
-                 "bigram distance", 
                  "idf bigram distance", 
                  "soundex"),
     linktype = c("one:one", "many:one"),
