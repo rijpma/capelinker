@@ -1,0 +1,57 @@
+---
+title: Creating training data
+output: rmarkdown::pdf_document
+date: \today
+---
+
+## Labelling
+To train a new model, training data is needed. Here we have pre-labelled data so you can skip this section if you just want to go through the procedure. However, often training data would have to be made from scratch and it's good to have an example of that as well. 
+
+To create training data efficiently, we can sample from the candidate set. We will never link data outside the candidate set anyway, so this will not result in missed links. However, it does require you to be confident about your blocking key.
+
+As mentioned above, we want the candidates to be representative of the whole dataset. A good way to achieve that is by taking a random sample from the candidates set. 
+
+```{r}
+set.seed(123)
+smpl = sample(rein$persid, 1000)
+cnd_smpl = capelinker::candidates(
+    dat_from = rein[persid %in% smpl],
+    dat_to = rein[!persid %in% smpl],
+    blocktype = "bigram distance",
+    blockvariable_from = "mlast",
+    blockvariable_to = "mlast",
+    maxdist = 0.5)
+```
+
+It would not make sense for a household to be linked to the same year, so we drop these observations:
+
+```{r}
+cnd_smpl = cnd_smpl[year_from != year_to]
+```
+
+We could label this candidate set, but it is useful to sort the data to make searching easier. Here we do that on the basis of the same string distances the model will use to predict the links.
+
+```{r}
+cnd_smpl[, mlastdist := stringdist::stringdist(mlast_from, mlast_to, method = "jw")]
+cnd_smpl[, mfirstdist := stringdist::stringdist(mfirst_from, mfirst_to, method = "jw")]
+cnd_smpl[, wlastdist := stringdist::stringdist(wlast_from, wlast_to, method = "jw")]
+cnd_smpl[, wfirstdist := stringdist::stringdist(wfirst_from, wfirst_to, method = "jw")]
+```
+
+And finally we order the data, first on the person identifier to make sure that this candidate block stays together, next on the product of the male first name and surname distance, and finally on the wife's surname distance.
+
+```{r}
+out = cnd_smpl[order(persid_from, mlastdist*mfirstdist, wlastdist), 
+    .SD,
+    .SDcols = patterns("(year|persid|mlast|mfirst|wlast|wfirst)(_from|_to|dist)")]
+```
+
+We select the relevant columns (you might want to include more or less), and this object can then be exported from R to label the true links. As an additional step we can add white lines between the candidate blocks.
+
+```{r}
+out = out[, 
+    rbindlist(list(.SD, list(NA)), fill = TRUE), 
+    by = persid_from]
+```
+
+Note two things about this particular approach. First, one household will be linked to multiple years so you'll have to find them all to create good training. If it's possible to create a candidate set where at most one true link can exist in a block, this will make searching easier and is preferable. And second, while we expect most true links to be at the top of the block, this is not always true. Dropped prefixes or short names can result in surprisingly large string distances. Above all: missing values might put true links at the bottom of the block.

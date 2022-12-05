@@ -1,7 +1,8 @@
 ---
 title: Worked linkage example
 author: Auke Rijpma
-output: rmarkdown::html_vignette
+output: rmarkdown::pdf_document
+urlcolor: blue
 date: \today
 ---
 
@@ -25,13 +26,15 @@ Capelinker is still under development, so it's useful to check the version. Here
 packageVersion("capelinker")
 ```
 
+The latest version could be installed using:
+
 ```{r eval = FALSE}
 library("remotes")
 remotes::install_github("rijpma/capelinker")
 ```
 
 ## Loading data
-Here we use the cleaned opgaafrolle data set for Graaff Reinet.
+Here we use the cleaned opgaafrolle data set for Graaff Reinet included with the `capelinker` package.
 
 ```{r}
 data(rein)
@@ -55,7 +58,7 @@ rein[!is.na(linkid), sort(unique(stringi::stri_sub(mlast, 1, 1)))]
 However, when making your own training data, it is advised to sample from the entire dataset rather than on a subset like this which could lead to poor out-of-sample performance if other years or certain name groups are very different from the training data (for example, naming practices or demographic behaviour change). A separate vignette shows how to efficiently create datasets for manual labelling to deal with this.
 
 ## Data check
-We can use `preflight()` to check whether the data is ready for linkage by checking whether the data is consistently upper or lower case, patterns of missing data, and whether there aren't any unexpected (non-ascii) characters present. Because these data are pre-cleaned there are no real issues to worry about here.
+We can use `preflight()` to check whether the data is ready for linkage by checking whether the data is consistently upper or lower case, patterns of missing data, and whether there aren't any unexpected (non-ascii) characters present. Because these data are pre-cleaned there, no real issues pop up here.
 
 ```{r}
 preflight(rein)
@@ -63,7 +66,7 @@ preflight(rein)
 
 
 ## Candidates
-A function `candidates()` is included to help in the making of a candidate set -- a subset of all possible combinations that contains only plausible links. This is done on a pair of variables called the "blocking key", which preferably are reliable and cheap to compare. For the Cape Colony context we very rarely have good blocking keys like year of birth to make the candidates, so `candidates()` relies on a number of string distance functions to create the candidates, and these can take a lot of time to compute. The least inefficient way to do that is the default "bigram distance" option.
+A function `candidates()` is included to help in the making of a candidate set -- a subset of all possible combinations that contains only plausible links. This is done on a pair of variables called the "blocking key", which preferably are reliable and cheap to compare between the datasets. For the Cape Colony we very rarely have good blocking keys like year of birth to make the candidates, so `candidates()` relies on a number of string distance functions to create the candidates, and these can take a lot of time to compute. The least inefficient way to do that is the default "bigram distance" option.
 
 ```{r}
 cnd = capelinker::candidates(
@@ -75,7 +78,7 @@ cnd = capelinker::candidates(
     maxdist = 0.5)
 ```
 
-Here we create candidates for linkage between the years 1828 and all other years for the Graaff Reinet district. You have to tell `candidates()` the variables you want to block on, and how much dissimilarity you're willing to accept (here 0.5 on a scale 0--1). Often you can be a bit stricter but it is advised to check the data what works for you.
+Here we create candidates for linkage between the years 1828 and all other years for the Graaff Reinet district. We also tell `candidates()` the variables you want to block on, and how much dissimilarity you're willing to accept (here 0.5 on a scale 0--1). Often you can be a bit stricter but it is advised to check the data to find out what works for you.
 
 A quick look at what the candidates look like:
 
@@ -87,9 +90,9 @@ cnd[persid_from == 1 & year_to == 1826,
     .SDcols = patterns("(mlast|mfirst|wlast|wfirst)_(from|to)")]
 ```
 
-We have 1.4 million candidates, with each household from 1828 having  on average 31 candidates per year. For `persid` 1 in 1826 we have only two candidates, the second of which seems to be the correct match.
+We have over 1.4 million candidates, with each household from 1828 having  on average 31 candidates per year. For `persid` 1 in 1826 we have only two candidates, the second of which seems to be the correct match.
 
-Any identical names in the two datasets get the suffices `_from` and `_to`. If you don't have the same column names, you'll have to keep track of the variables yourself.
+Any identical names in the two datasets get the suffices `_from` and `_to`. If you don't have the same column names, you'll have to keep track of the variables in some other way.
 
 ## String distances
 
@@ -110,7 +113,7 @@ cnd[persid_from == 1 & year_to == 1826,
 
 ## Training
 
-For the remainder of this example, however, we work with the manually created links in the Graaff Reinet data. Remember that for the years 1828 and 1826 the surnames starting with A-L were linked using a variable called `linkid` which gave the same number to both households. We subset our complete candidates data set, `cnd`, to these observations and create an outcome variable from the `linkid` variable. Note that we assume that wherever no value for `linkid` was assigned, the observation could not be linked and we impute that `correct` should be 0.
+For the remainder of this example, however, we work with the manually created links in the Graaff Reinet data. Remember that for the years 1828 and 1826 the surnames starting with A-L were linked using a variable called `linkid` which gave the same number to both households. We subset our complete candidates data set, `cnd`, to these observations and create an outcome variable from the `linkid` variable. Note that we assume that wherever no value for `linkid` was assigned, the observation could not be linked and we impute that `correct`, the variable indicating whether a candidate link pair is correct, should be 0.
 
 ```{r}
 cnd_lbl = cnd[year_to == 1826  
@@ -120,19 +123,20 @@ cnd_lbl[, correct := linkid_from == linkid_to]
 cnd_lbl[is.na(correct), correct := 0]
 ```
 
-This data is next split in a training and test data set, using the latter to asses the model's performance without those numbers being affected by overfitting. We use a 70-30 split for the data. Note that we split the data on the `persid_from` identifier, not on the rows, to ensure that full candidate blocks end up in the training and test data sets.
+This data is next split in a training and test data set, using the latter to asses the model's performance without the performance metrics being affected by overfitting. We use a 70-30 split for the data. Note that we split the data on the basis of the `persid_from` identifier, not on the rows, to ensure that full candidate blocks end up in the training and test data sets.
 
 ```{r}
 set.seed(123871)
 share_train = 0.7
-cnd_lbl[, train := persid_from %in% sample(
-        x = unique(persid_from), 
-        size = ceiling(length(unique(persid_from)) * share_train))]
+sample_ids = sample(x = unique(cnd_lbl$persid_from), 
+    size = ceiling(length(unique(cnd_lbl$persid_from)) * share_train))
+
+cnd_lbl[, train := persid_from %in% sample_ids]
 trn = cnd_lbl[train == 1]
 tst = cnd_lbl[train == 0]
 ```
 
-We next select a number of features to predict correct links. Here we keep the model very simple and only look at the string distances of the the spouses' first and surnames as well as the number of matches in a candidate block. The models we used to link within opgaafrollen (and which are available as pretrained models) have more features to squeeze out a few percentage points better performance. As a next step, we create `xgboost`'s specific matrix objects, `xgb.DMatrix`. R's formula interface could also be used, but it takes an extra step to convert this object to an `xgboost`-ready object. (`capelinker` has a convenience function for this: `xgbm_ff()`).
+We next select a number of features to predict correct links. Here we keep the model very simple and only look at the string distances of the the spouses' first and surnames as well as the number of matches in a candidate block. The models we [used to link within opgaafrollen](https://doi.org/10.1080/01615440.2018.1517030) (and which are available as pretrained models) have more features to squeeze out a few percentage points better performance. As a next step, we create `xgboost`'s specific matrix objects, `xgb.DMatrix`. R's formula interface could also be used for this, but it takes an extra step to convert this object to an `xgboost`-ready object. (`capelinker` has a convenience function for this: `xgbm_ff()`).
 
 ```{r}
 predictors = c("mlastdist", "mfirstdist", "wlastdist", "wfirstdist", "matches")
@@ -140,7 +144,7 @@ trn_xgb = xgboost::xgb.DMatrix(as.matrix(trn[, ..predictors]), label = trn$corre
 tst_xgb = xgboost::xgb.DMatrix(as.matrix(tst[, ..predictors]), label = tst$correct)
 ```
 
-Next, we train a model on the basis of this data. Our best experiences are with a gradient boosting model, as implemented in the `xgboost` library. It is very accurate, but also performant in terms of computational efficiency as the dataset grows larger. It also deals with missing values which are a frequent issue in historical data like this. As a downside it comes with lots of tuning parameters, most of them to prevent overfitting. Below we largely stick to the default parameters. It is important to set the model objective to "binary:logistic" when working with a binary outcome, or otherwise performance will be much reduced.
+Next, we train a model on the basis of this data. Our best experiences are with a gradient boosting model, as implemented in the `xgboost` library. It is as accurate as any other model we tried, but also performant in terms of computational efficiency as the dataset grows larger. It also deals with missing values which are a frequent issue in historical data like this. As a downside it comes with lots of tuning parameters, most of them to prevent overfitting. Below we largely stick to the default parameters. It is important to set the model objective to "binary:logistic" when working with a binary outcome, or performance will be much reduced.
 
 
 ```{r}
@@ -148,10 +152,10 @@ m = xgboost::xgb.train(
     data = trn_xgb,
     nrounds = 500,
     params = list(
-        max_depth = 6,        # default 6
-        min_child_weight = 1, # default 1
-        gamma = 1,            # default 0
-        eta = 0.3,            # default 0.3
+        max_depth = 6,          # default 6
+        min_child_weight = 1,   # default 1
+        gamma = 1,              # default 0
+        eta = 0.3,              # default 0.3
         subsample = 0.8,        # default 1
         colsample_bytree = 0.5, # default 1
         objective = "binary:logistic"
@@ -160,7 +164,7 @@ m = xgboost::xgb.train(
 
 ## Evaluation
 
-Next we evaluate how well the model performs. We do this on the basis of three metrics:
+Next we evaluate how well the model performs. We do this on the basis of three metrics (calculated from the number of True Positives (TP), False Positives (FP), and False Negatives (FN):
 
 * precision, $\frac{TP}{TP + FP}$, the share of true predictions that are actually correct,
 * recall: $\frac{TP}{TP + FN}$, the share of actually correct links that are predicted as true
@@ -168,7 +172,7 @@ Next we evaluate how well the model performs. We do this on the basis of three m
 
 More informally, the recall tells us how many correct links we manage to recover; and the precision tells us how many of the predicted links are actually correct. If the model performs poorly, we can tweak the model and re-evaluate. We use the test data for these evaluations.
 
-We first have a quick look at the relative importance of each feature in prediction correct links using the `xgb.importance` function. The male first name contributes most, and the male surname the least. The latter is because we use the surname to create the candidate blocks, so each candidate pair should have similar surnames and variation will be low for this feature.
+We first have a quick look at the relative importance of each feature in prediction correct links using the `xgb.importance` function. The male first name contributes most, and the male surname the least. The latter's unimportance is because we use the surname to create the candidate blocks, so each candidate pair should have similar surnames and there should be little variation for this features for the model to exploit.
 
 ```{r}
 xgboost::xgb.importance(model = m)
@@ -184,7 +188,7 @@ predictions = data.table(
 knitr::kable(table(predictions$correct, predictions$predicted > 0.5))
 ```
 
-The metrics are calculated with the `Metrics` library. In all cases the true prediction threshold is set to 0.5. We can use use precision-recall curves to change this, but so far the experience is that 0.5 is a pretty good treshold as most true and false links tend to cluster at high (>0.8) and low (<0.2) predicted probabilities.
+The metrics are calculated with the `Metrics` library. In all cases the true prediction threshold is set to 0.5. We can use use precision-recall curves to choose a better value, but so far the experience is that 0.5 works pretty well as nearly all true and false links tend to cluster at high (>0.8) and low (<0.2) predicted probabilities ayway.
 
 ```{r}
 Metrics::precision(predictions$correct, predictions$predicted > 0.5)
@@ -196,7 +200,7 @@ Here the precision and recall are 90% and 84% respectively, and combine to an F-
 
 ## Prediction
 
-Finally, predicting links on the basis of this model is simply done with the generic predict function and inserting them into the candidates data. The `newdata` argument is needed for these predictions, and `xgboost` requires this data to be in the from of an `xgb.DMatrix`.
+Finally, predicting links on the basis of this model is done with the generic `predict()` function and inserting them into the candidates data. The `newdata` argument is needed for these predictions, and `xgboost` again requires this data to be in the from of an `xgb.DMatrix`. We use the `feature_names` element from the model `m` to construct the matrix.
 
 ```{r}
 m$feature_names
@@ -209,7 +213,7 @@ cnd[,
 
 ## Link selection
 
-As a final step, we need to use the predicted probabilities to select links. Here we create two rank variables, one finding the best candidate for a household in a candidate block (`persid_from`), and one finding the best links to a certain household across all candidate blocks (elsewhere we have just gone with the best candidate within each block). Only when both are the best, and the predicted probability is higher than 0.5 do we keep the link. It is possible to be more or less strict, both in terms of the probability threshold (which should be evaluated on the basis of the metrics above), and whether the observation should be best on two ranks or only one.
+As a final step, we need to use the predicted probabilities to select links. Here we create two rank variables, one finding the best candidate for a household in a candidate block (`persid_from`), and one finding the best links to a certain household across all candidate blocks (elsewhere we have just gone with the best candidate within each block). Only when a candidate pairs is thethe best in both rangks, and the predicted probability is higher than 0.5, do we keep the link. It is possible to be more or less strict, both in terms of the probability threshold (which should be evaluated on the basis of the metrics above), and whether the observation should be best on two ranks or only one.
 
 ```{r}
 cnd[, rnk_from := rank(-pred), by=list(year_to, persid_from)]
@@ -219,8 +223,10 @@ out = cnd[rnk_to == 1 & rnk_from == 1 & pred > 0.5, list(persid_from, persid_to,
 
 ```
 
-When exporting the linkset we of course include the two household identifiers. We also include the predicted probability, `pred` so users can take the confidence the model had in the link onboard.
+When exporting the linkset we of course include the two household identifiers to . We also include the predicted probability, `pred` so users can take the confidence the model had in the link onboard when working with the data.
 
 ## Panel reconstruction
 
-These links can now be used to reconstruct the panel, but this will not be covered here. When linking two cross-sections only, using this linkset would be straightforward.
+These links can now be used to reconstruct the panel, but this will not be covered here. When linking two cross-sections only, using this linkset should be straightforward.
+
+
