@@ -105,13 +105,13 @@ preflight = function(dat,
             expected_classes,
             actual_classes = actual_classes[names(expected_classes)]))
 
-    cat("\nShare missing variables (cannot be matched):\n")
+    cat("\nShare missing variables (makes matching harder):\n")
     print(dat[, 
         lapply(.SD, function(x) mean(is.na(x), na.rm = TRUE)), 
         .SDcols = vrbs_present])
     cat("\n\n")
     
-    cat('Share empty variables ("") (matching may fail):\n')
+    cat('Share empty variables ("") (not recommended: matching may fail):\n')
     print(dat[, 
         lapply(.SD, function(x) mean(nchar(x) == 0, na.rm = TRUE)), 
         .SDcols = vrbs_present])
@@ -123,7 +123,7 @@ preflight = function(dat,
         .SDcols = vrbs_present])
     cat("\n\n")
 
-    cat("Share multiword string variables (models expect joint middle names or joint prefixes):\n")
+    cat("Share multiword string variables (pretrained models expect middle names and prefixes in the first and surname field respectively):\n")
     print(dat[, 
         lapply(.SD, function(x) mean(stringi::stri_count_words(x) > 1, na.rm = TRUE)),
         .SDcols = vrbs_present])
@@ -153,7 +153,7 @@ preflight = function(dat,
     cat("\n\n")
 
 
-    cat('Share accented letters and non-alphabetic symbols per variable (matching might require consistency):\n')
+    cat('Share accented letters and non-alphabetic symbols per variable (matching requires consistency):\n')
     print(dat[, 
         lapply(.SD, function(x) mean(grepl("[^a-zA-Z ]", x))), 
         .SDcols = vrbs_present])
