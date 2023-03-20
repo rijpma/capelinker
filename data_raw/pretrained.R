@@ -281,11 +281,17 @@ conf = table(actual = predictions$correct, predicted = predictions$pred_bos > 0.
 print(xtable(conf), 
     add.to.row = list(pos=list(-1), command=c("& \\multicolumn{3}{c}{Predicted}\\\\")))
 
-predictions[, .N, by = list(actual = correct, predicted = pred_bos > 0.5)]
-
-Metrics::precision(predictions$correct, predictions$pred_bos > 0.5)
-Metrics::recall(predictions$correct, predictions$pred_bos > 0.5)
-Metrics::fbeta_score(predictions$correct, predictions$pred_bos > 0.5)
+saf_validation_metrics = list(
+    confusion = predictions[, .N, by = list(actual = correct, predicted = pred_bos > 0.5)],
+    precision = Metrics::precision(predictions$correct, predictions$pred_bos > 0.5),
+    recall = Metrics::recall(predictions$correct, predictions$pred_bos > 0.5),
+    fbeta_score = Metrics::fbeta_score(predictions$correct, predictions$pred_bos > 0.5),
+    date = Sys.time(),
+    features = m_boost_saf$feature_names
+)
+out = capture.output(saf_validation_metrics)
+writeLines(capture.output(saf_validation_metrics), 
+    paste0("~/repos/saf/saf_validation_metrics-", Sys.time(), ".txt"))
 
 toplot = predictions[, .N, by = list(actual = correct, predicted = pred_bos > 0.5)]
 steps = seq(0.01, 1, 0.01)
