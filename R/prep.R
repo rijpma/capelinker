@@ -18,12 +18,13 @@
 #'          Note that some analphabetics (for instance "." or "-") could be frequently 
 #'          and consistently applied in the data. String distance calculation does not 
 #'          fail on accented letters, but it does count towards the string distance.
+#'      \item The set of unique characters in each of the variables.
 #'      \item Whether the variables required for one of the pretrained models
 #'          in capelinker are present and correctly named. }
 #' 
 #' Capelinker also checks the dataset for the requirements of a number of pretrainined models in the capelinker package. The following models are available: 
 #' \itemize{
-#'  \item \code{m_boost_stel_rein} a model linking households from one year to the next in the opgaafrollen.
+#'  \item \code{m_boost_stel_rein} a model linking households from one year to the next in the opgaafrollen (default).
 #'  \item \code{m_rf_baptisms_sparse} a model linking parents in baptism records to marriage records, based on minimal information: male surname (mlast), male first name (mfirst), female first name (wfirst, female surname not used because it would typically not be reported in the baptism records), and year of marriage/baptism (year).
 #'  \item \code{m_rf_baptisms_full} a model linking parents in baptism and marriage records, using additional information: initials, profession, and soundex distances of the names. Performance is not much better than the sparse model.
 #' }
@@ -50,8 +51,9 @@
 #' } 
 #' 
 #' @param dat the dataset to check, as a data.table.
-#' @param character_variables the names of the character variables to check, defaults to the male and female first name and surname using the feature names from the pretrained models.
-#' @param numeric_variables the names of the numeric variables to check.
+#' @param vrbs a vector of the names of variables to check. Defaults to NULL,
+#'  in which case variable names are extracted from the model specified with
+#'  modstring
 #' @param modstring the name of the pretrained model to check against
 #' 
 #' @return Text to the console showing the results of the tests.
@@ -63,26 +65,39 @@
 #' @import data.table
 #' @export
 preflight = function(dat,
-    character_variables = c("mlast", "mfirst", "wlast", "wfirst"),
-    numeric_variales = NULL,
+    vrbs = NULL,
     modstring = c("m_boost_stel_rein", "m_rf_baptisms_sparse", "m_rf_baptisms_full")){
 
+    # check if modstring is an existing model
     modstring = match.arg(modstring)
 
+    # get equivalent variable names from model
     pattern = "dist$|dist_osa$|sdx$|gauss$"
 
     data("pretrained_models", package = "capelinker")
 
-    vrbs = pretrained_models[[modstring]]$variables
-    vrbs = gsub(pattern, "", vrbs[grepl(pattern, vrbs)])
+    vrbs_model = pretrained_models[[modstring]]$variables
+    vrbs_model = gsub(pattern, "", vrbs_model[grepl(pattern, vrbs_model)])
 
-    vrbs_missing = setdiff(vrbs, names(dat))
+    # keep old behaviour in case vrbs not used
+    # drop once all downstream code updated
+    # also usually it's of length more than one
+    if (is.null(vrbs)) vrbs = vrbs_model
+
+    # check if vrbs actually in model
+    vrbs_data = names(dat)
+    vrbs_not_in_data = setdiff(vrbs, vrbs_data)
+    cat("Missing in data:\n", 
+        vrbs_not_in_data, 
+        "\n--------------\n")
+
+    vrbs_missing = setdiff(vrbs_model, vrbs)
 
     cat("Missing for ", modstring, ": \n",
         vrbs_missing, 
         "\n--------------\n")
 
-    vrbs_present = setdiff(vrbs, vrbs_missing)
+    vrbs_present = intersect(vrbs, vrbs_data)
 
     expected_classes = c(
         mlast = "character",
@@ -97,8 +112,6 @@ preflight = function(dat,
     )
 
     actual_classes = sapply(dat, class)
-
-    actual_classes = actual_classes[names(actual_classes) %in% names(expected_classes)]
 
     print(
         data.frame(
