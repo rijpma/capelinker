@@ -6,19 +6,18 @@
 \usage{
 preflight(
   dat,
-  character_variables = c("mlast", "mfirst", "wlast", "wfirst"),
-  numeric_variales = NULL,
+  vrbs = NULL,
   modstring = c("m_boost_stel_rein", "m_rf_baptisms_sparse", "m_rf_baptisms_full")
 )
 }
 \arguments{
 \item{dat}{the dataset to check, as a data.table.}
 
-\item{character_variables}{the names of the character variables to check, defaults to the male and female first name and surname using the feature names from the pretrained models.}
+\item{vrbs}{a vector of the names of variables to check. Defaults to NULL,
+in which case variable names are extracted from the model specified with
+modstring}
 
 \item{modstring}{the name of the pretrained model to check against}
-
-\item{numeric_variables}{the names of the numeric variables to check.}
 }
 \value{
 Text to the console showing the results of the tests.
@@ -41,12 +40,13 @@ Preflight does a number of checks on the dataset.
          Note that some analphabetics (for instance "." or "-") could be frequently 
          and consistently applied in the data. String distance calculation does not 
          fail on accented letters, but it does count towards the string distance.
+     \item The set of unique characters in each of the variables.
      \item Whether the variables required for one of the pretrained models
          in capelinker are present and correctly named. }
 
 Capelinker also checks the dataset for the requirements of a number of pretrainined models in the capelinker package. The following models are available: 
 \itemize{
- \item \code{m_boost_stel_rein} a model linking households from one year to the next in the opgaafrollen.
+ \item \code{m_boost_stel_rein} a model linking households from one year to the next in the opgaafrollen (default).
  \item \code{m_rf_baptisms_sparse} a model linking parents in baptism records to marriage records, based on minimal information: male surname (mlast), male first name (mfirst), female first name (wfirst, female surname not used because it would typically not be reported in the baptism records), and year of marriage/baptism (year).
  \item \code{m_rf_baptisms_full} a model linking parents in baptism and marriage records, using additional information: initials, profession, and soundex distances of the names. Performance is not much better than the sparse model.
 }
