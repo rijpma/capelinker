@@ -303,3 +303,26 @@ len_longest_word = function(str){
     out = lapply(out, max)
     return(unlist(out))
 } 
+
+#' print a confusion matrix as tex
+#' 
+#' \code{conf2tex} prints a 2x2 confusion matrix as a latex table preservering the margin
+#' 
+#' @param conf the confusion matrix, a table
+#' @param caption the caption for the table, defaults to ""
+#' @param label the label for the table, defaults to ""
+#' 
+#' @export
+conf2tex = function(conf, caption = "", label = ""){
+    conf = rbind(colnames(conf), conf)
+    conf = cbind(rownames(conf), conf)
+    conf = cbind(c("", "Actual", ""), conf)
+    xconf = xtable::xtable(conf)
+    out = print(
+        xconf,
+        include.colnames=FALSE, 
+        include.rownames=FALSE, 
+        hline.after=c(1, nrow(conf)),
+        add.to.row = list(pos=list(-1), command="& & \\multicolumn{2}{c}{Predicted} \\\\")
+    )
+}
