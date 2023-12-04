@@ -256,6 +256,11 @@ saf_cnd[, train := couple_id_from %in% sample(unique(couple_id_from), ceiling(le
 trn_saf = saf_cnd[train == 1]
 vld_saf = saf_cnd[train == 0]
 
+trn_saf[, uniqueN(couple_id_from)]
+vld_saf[, uniqueN(couple_id_from)]
+trn_saf[, uniqueN(couple_id_from)] + vld_saf[, uniqueN(couple_id_from)]
+trn_saf[, sum(correct)] + vld_saf[, sum(correct)]
+
 # some overfitting going on her
 m_boost_saf = xgboost::xgb.train(
     data = capelinker::xgbm_ff(trn_saf, f_saf),
@@ -278,8 +283,7 @@ predictions = data.table(
     correct = as.logical(vld_saf$correct),
     pred_bos = predict(m_boost_saf, newdata = xgbm_ff(vld_saf, f_saf)))
 conf = table(actual = predictions$correct, predicted = predictions$pred_bos > 0.5)
-print(xtable(conf), 
-    add.to.row = list(pos=list(-1), command=c("& \\multicolumn{3}{c}{Predicted}\\\\")))
+writeLines(conf2tex(conf), con = "~/repos/saf/out/within_saf_confmat.tex")
 
 saf_validation_metrics = list(
     confusion = predictions[, .N, by = list(actual = correct, predicted = pred_bos > 0.5)],
