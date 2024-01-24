@@ -68,7 +68,7 @@ candidates = function(dat_from, dat_to,
             b = dat_to[, get(blockvariable_to)],
             method = 'jw', p = 0.1)
         candidate_list = apply(distmat, 1, function(x) which(x < maxdist))
-        score_list =distmat[rep(1:length(candidate_list), sapply(candidate_list, length)) + nrow(distmat) * (unlist(candidate_list) - 1)]
+        score_list = distmat[rep(1:length(candidate_list), sapply(candidate_list, length)) + nrow(distmat) * (unlist(candidate_list) - 1)]
         # score_list = apply(distmat, 1, function(x) x[which(x < maxdist)])
     }
     if (blocktype == "numeric"){
@@ -112,6 +112,8 @@ candidates = function(dat_from, dat_to,
 
     tomerge = dat_to[unlist(candidate_list), ]
     tomerge[, score:= unlist(score_list)]
+
+    # creating merge keys
     tomerge[, linked_to  := rep(dat_from[, get(idvariable_from)], times=sapply(candidate_list, length))]
     dat_from[, linked_from := get(idvariable_from)]
 
