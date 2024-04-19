@@ -326,3 +326,30 @@ conf2tex = function(conf, caption = "", label = ""){
         add.to.row = list(pos=list(-1), command="& & \\multicolumn{2}{c}{Predicted} \\\\")
     )
 }
+
+#' find and return similar strings as one string
+#' 
+#' \code{paste_similar} searches a vector of strings for similar strings and
+#'  pastes the duplicates for each string in the vector together
+#' 
+#' @param strings a vector of strings you want to find close duplicates
+#' @param threshold the string similarity threshold; only strings at least that similar on the JW-string sim are returned
+#' @param sep the separator in the returned pasted strings, defaults to " | "
+#'
+#' @examples s = c("jan van der merwe", "gerrit coetzee", "johan van der merwe", "jan van merwe")
+#' paste_similar(s)
+#' cbind(s, paste_similar(s))
+#' 
+#' @export
+paste_similar = function(strings, method = "jw", threshold = 0.85, sep = " | "){
+    m = stringdist::stringsimmatrix(strings, method = method)
+    
+    # don't wan't self-self
+    diag(m) = 0
+
+    # return the strings where the string sim is larger than the threshold,
+    # and paste those strings with sep |
+    out = apply(m, 2, function(x) paste(strings[which(x > threshold)], collapse = sep))
+
+    return(out)
+}
