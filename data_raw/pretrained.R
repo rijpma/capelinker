@@ -319,7 +319,6 @@ ggplot(toplot, aes(prec, rec)) +
 ## saf to opgaafrol
 # -----------------
 
-
 # training data
 alabels = readxl::read_xlsx("~/data/cape/saf/saf2opg_candidates_batch2_auke.xlsx")
 jlabels = readxl::read_xlsx("~/data/cape/saf/saf2opg_candidates_batch1_jeanne.xlsx")
@@ -440,6 +439,16 @@ saf2opg[, train := couple_id %in% sample(unique(couple_id), ceiling(length(uniqu
 trn_saf2opg = saf2opg[train == 1]
 vld_saf2opg = saf2opg[train == 0]
 
+trn_saf2opg[, uniqueN(couple_id)]
+vld_saf2opg[, uniqueN(couple_id)]
+trn_saf2opg[, uniqueN(couple_id)] + vld_saf2opg[, uniqueN(couple_id)]
+trn_saf2opg[, sum(correct)] + vld_saf2opg[, sum(correct)]
+
+# no link at all
+trn_saf2opg[, all(correct == 0), by = couple_id][, sum(V1)] + 
+    vld_saf2opg[, all(correct == 0), by = couple_id][, sum(V1)]
+
+
 # slight overfitting going on here
 m_saf2opg = xgboost::xgb.train(
     data = capelinker::xgbm_ff(trn_saf2opg, f_saf2opg),
@@ -458,10 +467,24 @@ m_saf2opg = xgboost::xgb.train(
 predictions = data.table(
     correct = as.logical(vld_saf2opg$correct),
     predicted = predict(m_saf2opg, newdata = xgbm_ff(vld_saf2opg, f_saf2opg)))
-table(actual = predictions$correct, predicted = predictions$predicted > 0.5)
+conf = table(actual = predictions$correct, predicted = predictions$predicted > 0.5)
 predictions[, Metrics::precision(correct, predicted > 0.5)]
 predictions[, Metrics::recall(correct, predicted > 0.5)]
 predictions[, Metrics::fbeta_score(correct, predicted > 0.5)]
+
+writeLines(conf2tex(conf), con = "~/repos/saf2opg/out/between_saf2opg_confmat.tex")
+
+saf2opg_validation_metrics = list(
+    confusion = predictions[, .N, by = list(actual = correct, predicted = predicted > 0.5)],
+    precision = Metrics::precision(predictions$correct, predictions$predicted > 0.5),
+    recall = Metrics::recall(predictions$correct, predictions$predicted > 0.5),
+    fbeta_score = Metrics::fbeta_score(predictions$correct, predictions$predicted > 0.5),
+    date = Sys.time(),
+    features = m_saf2opg$feature_names
+)
+writeLines(capture.output(saf_validation_metrics), 
+    paste0("~/repos/saf2opg/saf2opg_validation_metrics-", Sys.time(), ".txt"))
+knitr::kable(cbind(saf2opg_validation_metrics$features[-1], ""))
 
 pretrained_models = list(
     m_boost_stel_rein = list(
