@@ -64,6 +64,7 @@ split_prefixes = function(strings, more_prefixes = c()){
         "DA",
         "DE LA",
         "DE",
+        "DES",
         "DER",
         "DIE",
         "DU",
