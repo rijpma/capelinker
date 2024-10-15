@@ -238,19 +238,21 @@ stringdist_closest = function(string, method = "jw"){
     # if all NA, return all NA
     if (all(is.na(string))) return(rep(NA_real_, length(string)))
 
-    distmat = stringdist::stringdistmatrix(string, string, method = method)
-    diag(distmat) = NA_real_ # skip self-self
+    simmat = stringdist::stringsimmatrix(string, string, method = method)
+    
+    # skip self-self
+    diag(simmat) = NA_real_
 
-    out = apply(distmat, 2,
+    out = apply(simmat, 2,
         function(column){
             ifelse(
                 all(is.na(column)),
                 NA_real_,
-                min(column, na.rm = TRUE)
+                max(column, na.rm = TRUE)
             )
         }
     )
-    return(out)
+    return(1 - out)
 }
 
 
