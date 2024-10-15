@@ -228,19 +228,29 @@ rand_strings_like = function(strings_like, n_samples = 1){
             collapse = ""))
 }
 
-#' Calculate closets string distance to another string in a vector
+#' Calculate lowest string distance to the most similar string in a vector
 #' @export
 stringdist_closest = function(string, method = "jw"){
-    # if only one string, unique so highest possible distance (there is no rival)
+
+    # if there is only one string, this string is unique so return the highest possible distance
     if (length(string) == 1) return(1)
+
+    # if all NA, return all NA
     if (all(is.na(string))) return(rep(NA_real_, length(string)))
 
     distmat = stringdist::stringdistmatrix(string, string, method = method)
     diag(distmat) = NA_real_ # skip self-self
-    return(apply(distmat, 2, function(column){
-        ifelse(all(is.na(column)), NA_real_, min(column, na.rm = TRUE))
+
+    out = apply(distmat, 2,
+        function(column){
+            ifelse(
+                all(is.na(column)),
+                NA_real_,
+                min(column, na.rm = TRUE)
+            )
         }
-    ))
+    )
+    return(out)
 }
 
 
