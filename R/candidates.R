@@ -67,7 +67,7 @@ candidates = function(dat_from, dat_to,
             a = dat_from[, get(blockvariable_from)],
             b = dat_to[, get(blockvariable_to)],
             method = 'jw', p = 0.1)
-        candidate_list = apply(distmat, 1, function(x) which(x < maxdist))
+        candidate_list = apply(distmat, 1, function(x) which(x < maxdist), simplify = FALSE)
         score_list = distmat[rep(1:length(candidate_list), sapply(candidate_list, length)) + nrow(distmat) * (unlist(candidate_list) - 1)]
         # score_list = apply(distmat, 1, function(x) x[which(x < maxdist)])
     }
@@ -76,8 +76,8 @@ candidates = function(dat_from, dat_to,
             X = dat_from[, get(blockvariable_from)],
             Y = dat_to[, get(blockvariable_to)],
             FUN = capelinker::gk)
-        candidate_list = apply(simmat, 1, function(x) which(x > maxsim))
-        score_list = apply(simmat, 1, function(x) x[which(x > maxsim)])
+        candidate_list = apply(simmat, 1, function(x) which(x > maxsim), simplify = FALSE)
+        score_list = apply(simmat, 1, function(x) x[which(x > maxsim)], simplify = FALSE)
     }
     if (blocktype == "bigram distance"){
         simmat = qlcMatrix::sim.strings(
@@ -86,8 +86,8 @@ candidates = function(dat_from, dat_to,
             boundary = TRUE,
             left.boundary = "#", right.boundary = "#") # maybe no right boundary?
         # issue: if nothing similar enough, breaks?
-        candidate_list = apply(simmat, 1, function(x) which(x > maxsim))
-        score_list = apply(simmat, 1, function(x) x[which(x > maxsim)])
+        candidate_list = apply(simmat, 1, function(x) which(x > maxsim), simplify = FALSE)
+        score_list = apply(simmat, 1, function(x) x[which(x > maxsim)], simplify = FALSE)
     }
     if (blocktype == "idf bigram distance"){
         s1 = qlcMatrix::splitStrings(
@@ -102,8 +102,8 @@ candidates = function(dat_from, dat_to,
             left.boundary = "#", right.boundary = "#")
         m = qlcMatrix::jMatrix(rownames(s1), rownames(s2))
         simmat = qlcMatrix::cosSparse((m$M1 * 1) %*% s1, (m$M2 * 1) %*% s2, weight = qlcMatrix::idf)
-        candidate_list = apply(simmat, 1, function(x) which(x > maxsim))
-        score_list = apply(simmat, 1, function(x) x[which(x > maxsim)])
+        candidate_list = apply(simmat, 1, function(x) which(x > maxsim), simplify = FALSE)
+        score_list = apply(simmat, 1, function(x) x[which(x > maxsim)], simplify = FALSE)
     }
     if (blocktype == "soundex"){
         candidate_list = lapply(phonetic(dat_from[[blockvariable_from]]), 
