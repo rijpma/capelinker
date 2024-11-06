@@ -85,7 +85,12 @@ candidates = function(dat_from, dat_to,
             strings2 = dat_to[, get(blockvariable_to)],
             boundary = TRUE,
             left.boundary = "#", right.boundary = "#") # maybe no right boundary?
-        # issue: if nothing similar enough, breaks?
+
+        # simmat gets simplified to vector if only one candidate, but breaks code later on
+        if (nrow(dat_from) == 1){
+            simmat = Matrix::Matrix(simmat, nrow = 1, sparse = TRUE)
+        }
+
         candidate_list = apply(simmat, 1, function(x) which(x > maxsim), simplify = FALSE)
         score_list = apply(simmat, 1, function(x) x[which(x > maxsim)], simplify = FALSE)
     }
